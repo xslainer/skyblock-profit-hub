@@ -18,9 +18,10 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     itemName: '',
     lowestBin: '',
     craftCost: '',
+    pricePaid: '',
     lowballPercent: '',
     soldPrice: '',
-    useLowestBin: true,
+    costBasis: 'pricePaid' as 'lowestBin' | 'craftCost' | 'pricePaid',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,10 +29,20 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
   // Real-time calculations
   const lowestBinNum = parseShorthand(formData.lowestBin);
   const craftCostNum = parseShorthand(formData.craftCost);
+  const pricePaidNum = parseShorthand(formData.pricePaid);
   const soldPriceNum = parseShorthand(formData.soldPrice);
   const lowballPercentNum = parseFloat(formData.lowballPercent) || 0;
   
-  const costBasis = formData.useLowestBin ? lowestBinNum : craftCostNum;
+  const getCostBasis = () => {
+    switch (formData.costBasis) {
+      case 'lowestBin': return lowestBinNum;
+      case 'craftCost': return craftCostNum;
+      case 'pricePaid': return pricePaidNum;
+      default: return pricePaidNum;
+    }
+  };
+  
+  const costBasis = getCostBasis();
   const calculations = soldPriceNum > 0 && costBasis > 0 
     ? calculateProfit(soldPriceNum, costBasis)
     : { taxPercent: 0, taxAmount: 0, netProfit: 0 };
@@ -47,13 +58,14 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       itemName: formData.itemName.trim(),
       lowestBin: lowestBinNum,
       craftCost: craftCostNum,
+      pricePaid: pricePaidNum,
       lowballPercent: lowballPercentNum,
       soldPrice: soldPriceNum,
       taxPercent: calculations.taxPercent,
       taxAmount: calculations.taxAmount,
       netProfit: calculations.netProfit,
       dateTime: new Date(),
-      useLowestBin: formData.useLowestBin,
+      costBasis: formData.costBasis,
     };
 
     onAddTrade(newTrade);
@@ -63,9 +75,10 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       itemName: '',
       lowestBin: '',
       craftCost: '',
+      pricePaid: '',
       lowballPercent: '',
       soldPrice: '',
-      useLowestBin: true,
+      costBasis: 'pricePaid',
     });
 
     setIsSubmitting(false);
@@ -74,6 +87,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
   const isValid = formData.itemName.trim() && 
     formData.lowestBin && 
     formData.craftCost && 
+    formData.pricePaid &&
     formData.soldPrice &&
     soldPriceNum > 0 &&
     costBasis > 0;
@@ -102,7 +116,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
           </div>
 
           {/* Price Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label htmlFor="lowestBin">Lowest BIN Price</Label>
               <Input
@@ -113,7 +127,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
                 className="transition-all duration-200 focus:shadow-glow"
               />
               <p className="text-xs text-muted-foreground">
-                Supports shorthand: 1k, 1m, 1b
+                Current market price
               </p>
             </div>
 
@@ -128,6 +142,20 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
               />
               <p className="text-xs text-muted-foreground">
                 Cost to craft the item
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pricePaid">Price Paid</Label>
+              <Input
+                id="pricePaid"
+                value={formData.pricePaid}
+                onChange={(e) => setFormData(prev => ({ ...prev, pricePaid: e.target.value }))}
+                placeholder="e.g. 85m, 1.1b"
+                className="transition-all duration-200 focus:shadow-glow"
+              />
+              <p className="text-xs text-muted-foreground">
+                What you actually paid
               </p>
             </div>
           </div>
@@ -161,21 +189,38 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
             </div>
           </div>
 
-          {/* Cost Basis Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
-            <div className="space-y-1">
-              <Label htmlFor="useLowestBin" className="text-sm font-medium">
-                Use Lowest BIN for profit calculation
+          {/* Cost Basis Selection */}
+          <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
+            <div>
+              <Label className="text-sm font-medium">
+                Cost Basis for Profit Calculation
               </Label>
-              <p className="text-xs text-muted-foreground">
-                Toggle to use craft cost instead
+              <p className="text-xs text-muted-foreground mt-1">
+                Choose which cost to use for calculating profit
               </p>
             </div>
-            <Switch
-              id="useLowestBin"
-              checked={formData.useLowestBin}
-              onCheckedChange={(checked) => setFormData(prev => ({ ...prev, useLowestBin: checked }))}
-            />
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { value: 'pricePaid', label: 'Price Paid', desc: 'What you paid' },
+                { value: 'lowestBin', label: 'Lowest BIN', desc: 'Market value' },
+                { value: 'craftCost', label: 'Craft Cost', desc: 'Material cost' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, costBasis: option.value as any }))}
+                  className={cn(
+                    "p-3 rounded-lg border text-left transition-all duration-200",
+                    formData.costBasis === option.value
+                      ? "bg-primary text-primary-foreground border-primary shadow-glow"
+                      : "bg-background hover:bg-muted border-border"
+                  )}
+                >
+                  <div className="text-sm font-medium">{option.label}</div>
+                  <div className="text-xs opacity-75">{option.desc}</div>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Real-time Calculations */}

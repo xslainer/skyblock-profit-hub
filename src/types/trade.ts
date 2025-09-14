@@ -3,13 +3,14 @@ export interface Trade {
   itemName: string;
   lowestBin: number;
   craftCost: number;
+  pricePaid: number;
   lowballPercent: number;
   soldPrice: number;
   taxPercent: number;
   taxAmount: number;
   netProfit: number;
   dateTime: Date;
-  useLowestBin: boolean; // Whether to use lowest BIN or craft cost for profit calc
+  costBasis: 'lowestBin' | 'craftCost' | 'pricePaid'; // Which cost to use for profit calc
 }
 
 export interface ProfitMetrics {
