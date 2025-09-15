@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Trade, ProfitMetrics, LeaderboardItem, StatusStats } from '@/types/trade';
+import { Trade, ProfitMetrics, LeaderboardItem } from '@/types/trade';
 import { loadTrades, saveTrades, addTrade as addTradeToStorage, updateTrade as updateTradeInStorage, deleteTrade as deleteTradeFromStorage, clearAllTrades as clearAllTradesFromStorage } from '@/utils/storage';
 
 export function useTrades() {
@@ -32,13 +32,6 @@ export function useTrades() {
     };
   }, [trades]);
 
-  // Calculate status statistics
-  const statusStats = useMemo((): StatusStats => {
-    return trades.reduce((stats, trade) => {
-      stats[trade.auctionStatus]++;
-      return stats;
-    }, { sold: 0, listed: 0, unsold: 0 });
-  }, [trades]);
 
   // Generate leaderboard of items by profit
   const leaderboard = useMemo((): LeaderboardItem[] => {
@@ -93,7 +86,6 @@ export function useTrades() {
     trades,
     metrics,
     leaderboard,
-    statusStats,
     addTrade,
     updateTrade,
     deleteTrade,

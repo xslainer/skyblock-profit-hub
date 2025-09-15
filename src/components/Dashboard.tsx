@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trade, ProfitMetrics, LeaderboardItem, StatusStats } from '@/types/trade';
+import { Trade, ProfitMetrics, LeaderboardItem } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import { StatCard } from './StatCard';
 import { Leaderboard } from './Leaderboard';
@@ -13,12 +13,11 @@ interface DashboardProps {
   trades: Trade[];
   metrics: ProfitMetrics;
   leaderboard: LeaderboardItem[];
-  statusStats: StatusStats;
   onLeaderboardItemClick: (item: LeaderboardItem) => void;
   onClearAllTrades: () => void;
 }
 
-export function Dashboard({ trades, metrics, leaderboard, statusStats, onLeaderboardItemClick, onClearAllTrades }: DashboardProps) {
+export function Dashboard({ trades, metrics, leaderboard, onLeaderboardItemClick, onClearAllTrades }: DashboardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const { toast } = useToast();
@@ -102,38 +101,6 @@ export function Dashboard({ trades, metrics, leaderboard, statusStats, onLeaderb
         <StatCard title="Daily Profit" value={metrics.daily} />
       </div>
 
-      {/* Status Statistics */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Auction Status Overview</CardTitle>
-          <p className="text-sm text-muted-foreground">Track your auction statuses</p>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-              <div className="w-6 h-6 rounded-full bg-green-500" />
-              <div>
-                <p className="text-sm font-medium text-green-700 dark:text-green-400">Sold</p>
-                <p className="text-2xl font-bold text-green-700 dark:text-green-400">{statusStats.sold}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-              <div className="w-6 h-6 rounded-full bg-yellow-500" />
-              <div>
-                <p className="text-sm font-medium text-yellow-700 dark:text-yellow-400">Listed</p>
-                <p className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{statusStats.listed}</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-              <div className="w-6 h-6 rounded-full bg-red-500" />
-              <div>
-                <p className="text-sm font-medium text-red-700 dark:text-red-400">Unsold</p>
-                <p className="text-2xl font-bold text-red-700 dark:text-red-400">{statusStats.unsold}</p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Top 5 Most Profitable Items */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

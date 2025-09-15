@@ -15,24 +15,88 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Filter, Trash2 } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Search, Filter, Trash2, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
-interface ItemHistoryProps {
+interface ItemHistoryFilteredProps {
   trades: Trade[];
   onDeleteTrade: (tradeId: string) => void;
 }
 
-export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
+type TimeFilter = 'day' | 'week' | 'month' | 'year';
+
+export function ItemHistoryFiltered({ trades, onDeleteTrade }: ItemHistoryFilteredProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | 'all'>('all');
-  
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
   const { toast } = useToast();
 
   const categories: TradeCategory[] = [
     'Armors', 'Swords', 'Mage weapons', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
   ];
 
+  // Get date range based on filter
+  const getFilteredTrades = () => {
+    const now = new Date();
+    let startDate: Date;
+    
+    if (selectedDate && (timeFilter === 'month' || timeFilter === 'year')) {
+      // Use selected date as reference point
+      if (timeFilter === 'month') {
+        startDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+      } else { // year
+        startDate = new Date(selectedDate.getFullYear(), 0, 1);
+      }
+    } else {
+      // Use current date as reference
+      switch (timeFilter) {
+        case 'day':
+          startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+      }
+    }
+
+    let endDate: Date;
+    if (selectedDate && (timeFilter === 'month' || timeFilter === 'year')) {
+      if (timeFilter === 'month') {
+        endDate = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+      } else { // year
+        endDate = new Date(selectedDate.getFullYear(), 11, 31);
+      }
+    } else {
+      endDate = now;
+    }
+
+    return trades.filter(trade => {
+      const tradeDate = new Date(trade.dateTime);
+      const matchesTimeRange = tradeDate >= startDate && tradeDate <= endDate;
+      const matchesSearch = trade.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || trade.category === selectedCategory;
+      
+      return matchesTimeRange && matchesSearch && matchesCategory;
+    });
+  };
+
+  const filteredTrades = getFilteredTrades();
+
+  // Sort trades by date (newest first)
+  const sortedTrades = [...filteredTrades].sort((a, b) => 
+    new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+  );
 
   const calculateLowballPercent = (trade: Trade): number => {
     if (trade.costBasis === 'lowestBin' && trade.lowestBin > 0) {
@@ -47,18 +111,6 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
     return 0;
   };
 
-  // Filter trades based on search term and category
-  const filteredTrades = trades.filter(trade => {
-    const matchesSearch = trade.itemName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || trade.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  // Sort trades by date (newest first)
-  const sortedTrades = [...filteredTrades].sort((a, b) => 
-    new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
-  );
-
   const handleDeleteTrade = (trade: Trade) => {
     onDeleteTrade(trade.id);
     toast({
@@ -67,14 +119,26 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
     });
   };
 
+  const getTimeFilterLabel = () => {
+    switch (timeFilter) {
+      case 'day': return 'Today';
+      case 'week': return 'This Week';
+      case 'month': return selectedDate ? format(selectedDate, 'MMMM yyyy') : 'This Month';
+      case 'year': return selectedDate ? format(selectedDate, 'yyyy') : 'This Year';
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Item History</CardTitle>
+        <CardTitle>Item History - {getTimeFilterLabel()}</CardTitle>
         <p className="text-sm text-muted-foreground">
-          All your lowballing trades with filtering options
+          Browse your trades with advanced filtering options
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        {/* Filters */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -84,6 +148,8 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
               className="pl-10"
             />
           </div>
+          
+          {/* Category Filter */}
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as TradeCategory | 'all')}>
@@ -100,8 +166,55 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
               </SelectContent>
             </Select>
           </div>
+          
+          {/* Time Filter */}
+          <Select value={timeFilter} onValueChange={(value) => setTimeFilter(value as TimeFilter)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select time range" />
+            </SelectTrigger>
+            <SelectContent className="bg-background border border-border shadow-lg z-50">
+              <SelectItem value="day">Today</SelectItem>
+              <SelectItem value="week">This Week</SelectItem>
+              <SelectItem value="month">Month</SelectItem>
+              <SelectItem value="year">Year</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Date Picker for Month/Year */}
+          {(timeFilter === 'month' || timeFilter === 'year') && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal",
+                    !selectedDate && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {selectedDate ? (
+                    timeFilter === 'month' 
+                      ? format(selectedDate, "MMMM yyyy")
+                      : format(selectedDate, "yyyy")
+                  ) : (
+                    <span>Pick a {timeFilter}</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={setSelectedDate}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </CardHeader>
+      
       <CardContent>
         {trades.length === 0 ? (
           <div className="text-center py-8">
@@ -113,10 +226,12 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
         ) : sortedTrades.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">
-              No trades found {searchTerm && `matching "${searchTerm}"`} {selectedCategory !== 'all' && `in ${selectedCategory} category`}
+              No trades found for {getTimeFilterLabel().toLowerCase()}
+              {searchTerm && ` matching "${searchTerm}"`}
+              {selectedCategory !== 'all' && ` in ${selectedCategory} category`}
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Try adjusting your search terms or filters
+              Try adjusting your filters or date range
             </p>
           </div>
         ) : (
@@ -131,6 +246,7 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
                   <TableHead>Price Paid</TableHead>
                   <TableHead>Price Sold</TableHead>
                   <TableHead>Lowball %</TableHead>
+                  <TableHead>Net Profit</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="w-[50px]">Actions</TableHead>
                 </TableRow>
@@ -163,6 +279,13 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
                           lowballPercent > 0 ? 'text-green-500' : 'text-red-500'
                         }`}>
                           {lowballPercent}%
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`font-medium ${
+                          trade.netProfit >= 0 ? 'text-success' : 'text-destructive'
+                        }`}>
+                          {trade.netProfit >= 0 ? '+' : ''}{formatNumber(trade.netProfit)}
                         </span>
                       </TableCell>
                       <TableCell className="text-muted-foreground">

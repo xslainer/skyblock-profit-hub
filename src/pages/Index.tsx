@@ -4,12 +4,13 @@ import { useTrades } from '@/hooks/useTrades';
 import { Navigation } from '@/components/Navigation';
 import { Dashboard } from '@/components/Dashboard';
 import { AddTrade } from '@/components/AddTrade';
-import { ItemHistory } from '@/components/ItemHistory';
+import { ItemHistoryFiltered } from '@/components/ItemHistoryFiltered';
+import { Analytics } from '@/components/Analytics';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { trades, metrics, leaderboard, statusStats, addTrade, deleteTrade, clearAllTrades } = useTrades();
+  const { trades, metrics, leaderboard, addTrade, deleteTrade, clearAllTrades } = useTrades();
   const { toast } = useToast();
 
   const handleAddTrade = (newTrade: any) => {
@@ -34,7 +35,6 @@ const Index = () => {
             trades={trades}
             metrics={metrics}
             leaderboard={leaderboard}
-            statusStats={statusStats}
             onLeaderboardItemClick={handleLeaderboardItemClick}
             onClearAllTrades={clearAllTrades}
           />
@@ -42,14 +42,9 @@ const Index = () => {
       case 'add-trade':
         return <AddTrade onAddTrade={handleAddTrade} />;
       case 'analytics':
-        return (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Analytics</h2>
-            <p className="text-muted-foreground">Coming soon - Charts and analytics</p>
-          </div>
-        );
+        return <Analytics trades={trades} />;
       case 'history':
-        return <ItemHistory trades={trades} onDeleteTrade={deleteTrade} />;
+        return <ItemHistoryFiltered trades={trades} onDeleteTrade={deleteTrade} />;
       default:
         return null;
     }
