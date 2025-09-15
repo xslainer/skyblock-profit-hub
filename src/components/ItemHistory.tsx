@@ -13,15 +13,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Search, Filter, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ItemHistoryProps {
   trades: Trade[];
+  onDeleteTrade: (tradeId: string) => void;
 }
 
-export function ItemHistory({ trades }: ItemHistoryProps) {
+export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | 'all'>('all');
+  const { toast } = useToast();
 
   const categories: TradeCategory[] = [
     'Armors', 'Swords', 'Mage weapons', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
@@ -51,6 +56,14 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
   const sortedTrades = [...filteredTrades].sort((a, b) => 
     new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
   );
+
+  const handleDeleteTrade = (trade: Trade) => {
+    onDeleteTrade(trade.id);
+    toast({
+      title: "Trade deleted",
+      description: `${trade.itemName} trade has been removed from history`,
+    });
+  };
 
   return (
     <Card>
@@ -117,6 +130,7 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
                   <TableHead>Price Sold</TableHead>
                   <TableHead>Lowball %</TableHead>
                   <TableHead>Date</TableHead>
+                  <TableHead className="w-[50px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -153,6 +167,32 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(trade.dateTime).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Trade</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete the trade for "{trade.itemName}"? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                className="bg-destructive hover:bg-destructive/90"
+                                onClick={() => handleDeleteTrade(trade)}
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   );

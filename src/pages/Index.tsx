@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { trades, metrics, leaderboard, addTrade } = useTrades();
+  const { trades, metrics, leaderboard, addTrade, deleteTrade } = useTrades();
   const { toast } = useToast();
 
   const handleAddTrade = (newTrade: any) => {
@@ -47,7 +47,7 @@ const Index = () => {
           </div>
         );
       case 'history':
-        return <ItemHistory trades={trades} />;
+        return <ItemHistory trades={trades} onDeleteTrade={deleteTrade} />;
       default:
         return null;
     }
