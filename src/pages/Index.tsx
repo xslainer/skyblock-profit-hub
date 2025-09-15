@@ -4,6 +4,7 @@ import { useTrades } from '@/hooks/useTrades';
 import { Navigation } from '@/components/Navigation';
 import { Dashboard } from '@/components/Dashboard';
 import { AddTrade } from '@/components/AddTrade';
+import { ItemHistory } from '@/components/ItemHistory';
 import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
@@ -46,12 +47,7 @@ const Index = () => {
           </div>
         );
       case 'history':
-        return (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold mb-4">Item History</h2>
-            <p className="text-muted-foreground">Coming soon - Trade history table</p>
-          </div>
-        );
+        return <ItemHistory trades={trades} />;
       default:
         return null;
     }
