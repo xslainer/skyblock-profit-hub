@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trade } from '@/types/trade';
+import { Trade, TradeCategory } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import {
   Table,
@@ -12,7 +12,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Filter } from 'lucide-react';
 
 interface ItemHistoryProps {
   trades: Trade[];
@@ -20,6 +21,11 @@ interface ItemHistoryProps {
 
 export function ItemHistory({ trades }: ItemHistoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<TradeCategory | 'all'>('all');
+
+  const categories: TradeCategory[] = [
+    'Armors', 'Swords', 'Mage weapons', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
+  ];
 
   const calculateLowballPercent = (trade: Trade): number => {
     if (trade.costBasis === 'lowestBin' && trade.lowestBin > 0) {
@@ -34,10 +40,12 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
     return 0;
   };
 
-  // Filter trades based on search term
-  const filteredTrades = trades.filter(trade =>
-    trade.itemName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter trades based on search term and category
+  const filteredTrades = trades.filter(trade => {
+    const matchesSearch = trade.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || trade.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   // Sort trades by date (newest first)
   const sortedTrades = [...filteredTrades].sort((a, b) => 
@@ -51,14 +59,32 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
         <p className="text-sm text-muted-foreground">
           All your lowballing trades sorted by most recent
         </p>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Search items..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Search items..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as TradeCategory | 'all')}>
+              <SelectTrigger className="pl-10">
+                <SelectValue placeholder="Filter by category" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-lg z-50">
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -71,9 +97,11 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
           </div>
         ) : sortedTrades.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">No trades found matching "{searchTerm}"</p>
+            <p className="text-muted-foreground">
+              No trades found {searchTerm && `matching "${searchTerm}"`} {selectedCategory !== 'all' && `in ${selectedCategory} category`}
+            </p>
             <p className="text-sm text-muted-foreground mt-2">
-              Try adjusting your search terms
+              Try adjusting your search terms or filters
             </p>
           </div>
         ) : (
@@ -82,6 +110,7 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
+                  <TableHead>Category</TableHead>
                   <TableHead>Lowest BIN</TableHead>
                   <TableHead>Raw Craft Cost</TableHead>
                   <TableHead>Price Paid</TableHead>
@@ -97,6 +126,11 @@ export function ItemHistory({ trades }: ItemHistoryProps) {
                     <TableRow key={trade.id}>
                       <TableCell className="font-medium">
                         {trade.itemName}
+                      </TableCell>
+                      <TableCell>
+                        <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                          {trade.category}
+                        </span>
                       </TableCell>
                       <TableCell>
                         {trade.lowestBin > 0 ? formatNumber(trade.lowestBin) : 'N/A'}

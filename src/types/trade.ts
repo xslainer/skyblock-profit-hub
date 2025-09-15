@@ -1,6 +1,17 @@
+export type TradeCategory = 
+  | 'Armors'
+  | 'Swords'
+  | 'Mage weapons'
+  | 'Bows'
+  | 'Skins'
+  | 'Dyes'
+  | 'Miscellaneous'
+  | 'Accessories';
+
 export interface Trade {
   id: string;
   itemName: string;
+  category: TradeCategory;
   lowestBin: number;
   craftCost: number;
   pricePaid: number;

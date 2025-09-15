@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Trade } from '@/types/trade';
+import { Trade, TradeCategory } from '@/types/trade';
 import { parseShorthand, calculateProfit, formatNumber } from '@/utils/calculations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Calculator } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -14,8 +15,13 @@ interface AddTradeProps {
 }
 
 export function AddTrade({ onAddTrade }: AddTradeProps) {
+  const categories: TradeCategory[] = [
+    'Armors', 'Swords', 'Mage weapons', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
+  ];
+
   const [formData, setFormData] = useState({
     itemName: '',
+    category: '' as TradeCategory | '',
     lowestBin: '',
     craftCost: '',
     pricePaid: '',
@@ -56,6 +62,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     const newTrade: Trade = {
       id: crypto.randomUUID(),
       itemName: formData.itemName.trim(),
+      category: formData.category as TradeCategory,
       lowestBin: lowestBinNum,
       craftCost: craftCostNum,
       pricePaid: pricePaidNum,
@@ -73,6 +80,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     // Reset form
     setFormData({
       itemName: '',
+      category: '',
       lowestBin: '',
       craftCost: '',
       pricePaid: '',
@@ -85,6 +93,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
   };
 
   const isValid = formData.itemName.trim() && 
+    formData.category &&
     formData.lowestBin && 
     formData.craftCost && 
     formData.pricePaid &&
@@ -103,16 +112,34 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
 
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Item Name */}
-          <div className="space-y-2">
-            <Label htmlFor="itemName">Item Name</Label>
-            <Input
-              id="itemName"
-              value={formData.itemName}
-              onChange={(e) => setFormData(prev => ({ ...prev, itemName: e.target.value }))}
-              placeholder="e.g. Hyperion, Necron's Helmet"
-              className="transition-all duration-200 focus:shadow-glow"
-            />
+          {/* Item Name and Category */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="itemName">Item Name</Label>
+              <Input
+                id="itemName"
+                value={formData.itemName}
+                onChange={(e) => setFormData(prev => ({ ...prev, itemName: e.target.value }))}
+                placeholder="e.g. Hyperion, Necron's Helmet"
+                className="transition-all duration-200 focus:shadow-glow"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category">Category</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value as TradeCategory }))}>
+                <SelectTrigger className="transition-all duration-200 focus:shadow-glow">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border shadow-lg z-50">
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Price Fields */}
