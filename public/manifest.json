@@ -1,0 +1,20 @@
+{
+  "name": "SBLowballer",
+  "short_name": "Lowball!",
+  "start_url": "https://https://skyblock-profit-hub.lovable.app",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#317EFB",
+  "icons": [
+    {
+      "src": "https://your-lovable-app-url.lovable.dev/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://your-lovable-app-url.lovable.dev/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
