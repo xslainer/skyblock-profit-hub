@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trade, TradeCategory } from '@/types/trade';
+import { Trade, TradeCategory, AuctionStatus } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import {
   Table,
@@ -26,11 +26,28 @@ interface ItemHistoryProps {
 export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | 'all'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<AuctionStatus | 'all'>('all');
   const { toast } = useToast();
 
   const categories: TradeCategory[] = [
     'Armors', 'Swords', 'Mage weapons', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
   ];
+
+  const getStatusColor = (status: AuctionStatus) => {
+    switch (status) {
+      case 'sold': return 'bg-green-500';
+      case 'listed': return 'bg-yellow-500';
+      case 'unsold': return 'bg-red-500';
+    }
+  };
+
+  const getStatusText = (status: AuctionStatus) => {
+    switch (status) {
+      case 'sold': return 'Sold';
+      case 'listed': return 'Listed';
+      case 'unsold': return 'Unsold';
+    }
+  };
 
   const calculateLowballPercent = (trade: Trade): number => {
     if (trade.costBasis === 'lowestBin' && trade.lowestBin > 0) {
@@ -45,11 +62,12 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
     return 0;
   };
 
-  // Filter trades based on search term and category
+  // Filter trades based on search term, category, and status
   const filteredTrades = trades.filter(trade => {
     const matchesSearch = trade.itemName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || trade.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = selectedStatus === 'all' || trade.auctionStatus === selectedStatus;
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
   // Sort trades by date (newest first)
@@ -70,9 +88,9 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
       <CardHeader>
         <CardTitle>Item History</CardTitle>
         <p className="text-sm text-muted-foreground">
-          All your lowballing trades sorted by most recent
+          All your lowballing trades with status tracking and filtering
         </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -98,6 +116,20 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
               </SelectContent>
             </Select>
           </div>
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Select value={selectedStatus} onValueChange={(value) => setSelectedStatus(value as AuctionStatus | 'all')}>
+              <SelectTrigger className="pl-10">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-lg z-50">
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="listed">Listed</SelectItem>
+                <SelectItem value="sold">Sold</SelectItem>
+                <SelectItem value="unsold">Unsold/Expired</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -111,7 +143,7 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
         ) : sortedTrades.length === 0 ? (
           <div className="text-center py-8">
             <p className="text-muted-foreground">
-              No trades found {searchTerm && `matching "${searchTerm}"`} {selectedCategory !== 'all' && `in ${selectedCategory} category`}
+              No trades found {searchTerm && `matching "${searchTerm}"`} {selectedCategory !== 'all' && `in ${selectedCategory} category`} {selectedStatus !== 'all' && `with ${selectedStatus} status`}
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               Try adjusting your search terms or filters
@@ -122,6 +154,7 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Status</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Lowest BIN</TableHead>
@@ -138,9 +171,19 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
                   const lowballPercent = calculateLowballPercent(trade);
                   return (
                     <TableRow key={trade.id}>
-                      <TableCell className="font-medium">
-                        {trade.itemName}
+                      <TableCell>
+                        <div className="flex items-center justify-center">
+                          <div className="relative">
+                            <div className="w-8 h-8 rounded-full bg-muted/30 border-2 border-muted flex items-center justify-center">
+                              <div className={`w-4 h-4 rounded-full ${getStatusColor(trade.auctionStatus)}`} />
+                            </div>
+                            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2">
+                              <span className="text-xs text-muted-foreground font-medium">{getStatusText(trade.auctionStatus)}</span>
+                            </div>
+                          </div>
+                        </div>
                       </TableCell>
+                      <TableCell className="font-medium">{trade.itemName}</TableCell>
                       <TableCell>
                         <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
                           {trade.category}

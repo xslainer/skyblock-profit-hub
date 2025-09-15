@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trade, TradeCategory } from '@/types/trade';
+import { Trade, TradeCategory, AuctionStatus } from '@/types/trade';
 import { parseShorthand, calculateProfit, formatNumber } from '@/utils/calculations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     lowballPercent: '',
     soldPrice: '',
     costBasis: 'pricePaid' as 'lowestBin' | 'craftCost' | 'pricePaid',
+    auctionStatus: 'listed' as AuctionStatus,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,6 +74,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       netProfit: calculations.netProfit,
       dateTime: new Date(),
       costBasis: formData.costBasis,
+      auctionStatus: formData.auctionStatus,
     };
 
     onAddTrade(newTrade);
@@ -87,6 +89,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       lowballPercent: '',
       soldPrice: '',
       costBasis: 'pricePaid',
+      auctionStatus: 'listed',
     });
 
     setIsSubmitting(false);
@@ -140,6 +143,21 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          {/* Auction Status */}
+          <div className="space-y-2">
+            <Label htmlFor="auction-status">Auction Status</Label>
+            <Select value={formData.auctionStatus} onValueChange={(value) => setFormData(prev => ({ ...prev, auctionStatus: value as AuctionStatus }))}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select auction status" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border shadow-lg z-50">
+                <SelectItem value="listed">Listed</SelectItem>
+                <SelectItem value="sold">Sold</SelectItem>
+                <SelectItem value="unsold">Unsold/Expired</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Price Fields */}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Trade, ProfitMetrics, LeaderboardItem } from '@/types/trade';
-import { loadTrades, saveTrades } from '@/utils/storage';
+import { Trade, ProfitMetrics, LeaderboardItem, StatusStats } from '@/types/trade';
+import { loadTrades, saveTrades, addTrade as addTradeToStorage, updateTrade as updateTradeInStorage, deleteTrade as deleteTradeFromStorage, clearAllTrades as clearAllTradesFromStorage } from '@/utils/storage';
 
 export function useTrades() {
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -32,64 +32,71 @@ export function useTrades() {
     };
   }, [trades]);
 
-  // Calculate leaderboard
+  // Calculate status statistics
+  const statusStats = useMemo((): StatusStats => {
+    return trades.reduce((stats, trade) => {
+      stats[trade.auctionStatus]++;
+      return stats;
+    }, { sold: 0, listed: 0, unsold: 0 });
+  }, [trades]);
+
+  // Generate leaderboard of items by profit
   const leaderboard = useMemo((): LeaderboardItem[] => {
-    const itemMap = new Map<string, Trade[]>();
-    
-    // Group trades by item name
-    trades.forEach(trade => {
-      const key = trade.itemName.toLowerCase();
-      if (!itemMap.has(key)) {
-        itemMap.set(key, []);
+    const itemGroups = trades.reduce((groups, trade) => {
+      const key = trade.itemName;
+      if (!groups[key]) {
+        groups[key] = {
+          itemName: key,
+          totalProfit: 0,
+          averageProfit: 0,
+          tradeCount: 0,
+          trades: []
+        };
       }
-      itemMap.get(key)!.push(trade);
-    });
-
-    // Calculate stats for each item
-    const items: LeaderboardItem[] = [];
-    itemMap.forEach((itemTrades, itemName) => {
-      const totalProfit = itemTrades.reduce((sum, trade) => sum + trade.netProfit, 0);
-      const averageProfit = totalProfit / itemTrades.length;
       
-      items.push({
-        itemName: itemTrades[0].itemName, // Use original casing from first trade
-        totalProfit,
-        averageProfit,
-        tradeCount: itemTrades.length,
-        trades: itemTrades.sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime()),
-      });
-    });
+      groups[key].totalProfit += trade.netProfit;
+      groups[key].tradeCount += 1;
+      groups[key].trades.push(trade);
+      
+      return groups;
+    }, {} as Record<string, LeaderboardItem>);
 
-    // Sort by total profit descending
-    return items.sort((a, b) => b.totalProfit - a.totalProfit);
+    return Object.values(itemGroups)
+      .map(item => ({
+        ...item,
+        averageProfit: item.totalProfit / item.tradeCount
+      }))
+      .sort((a, b) => b.totalProfit - a.totalProfit);
   }, [trades]);
 
   const addTrade = (newTrade: Trade) => {
-    const updatedTrades = [...trades, newTrade];
+    const updatedTrades = addTradeToStorage(newTrade);
     setTrades(updatedTrades);
-    saveTrades(updatedTrades);
   };
 
   const updateTrade = (updatedTrade: Trade) => {
-    const updatedTrades = trades.map(trade => 
-      trade.id === updatedTrade.id ? updatedTrade : trade
-    );
+    const updatedTrades = updateTradeInStorage(updatedTrade);
     setTrades(updatedTrades);
-    saveTrades(updatedTrades);
   };
 
   const deleteTrade = (tradeId: string) => {
-    const updatedTrades = trades.filter(trade => trade.id !== tradeId);
+    const updatedTrades = deleteTradeFromStorage(tradeId);
     setTrades(updatedTrades);
-    saveTrades(updatedTrades);
+  };
+
+  const clearAllTrades = () => {
+    const updatedTrades = clearAllTradesFromStorage();
+    setTrades(updatedTrades);
   };
 
   return {
     trades,
     metrics,
     leaderboard,
+    statusStats,
     addTrade,
     updateTrade,
     deleteTrade,
+    clearAllTrades
   };
 }

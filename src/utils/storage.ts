@@ -50,3 +50,8 @@ export function deleteTrade(tradeId: string): Trade[] {
   saveTrades(filtered);
   return filtered;
 }
+
+export function clearAllTrades(): Trade[] {
+  saveTrades([]);
+  return [];
+}
