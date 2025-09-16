@@ -14,7 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      trades: {
+        Row: {
+          ah_average_value: number
+          category: string
+          cost_basis: string
+          craft_cost: number
+          created_at: string
+          date_time: string
+          id: string
+          item_name: string
+          lowball_basis: string
+          lowball_percent: number
+          lowest_bin: number
+          net_profit: number
+          price_paid: number
+          sold_price: number
+          tax_amount: number
+          tax_percent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ah_average_value: number
+          category: string
+          cost_basis: string
+          craft_cost: number
+          created_at?: string
+          date_time?: string
+          id?: string
+          item_name: string
+          lowball_basis: string
+          lowball_percent: number
+          lowest_bin: number
+          net_profit: number
+          price_paid: number
+          sold_price: number
+          tax_amount: number
+          tax_percent: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ah_average_value?: number
+          category?: string
+          cost_basis?: string
+          craft_cost?: number
+          created_at?: string
+          date_time?: string
+          id?: string
+          item_name?: string
+          lowball_basis?: string
+          lowball_percent?: number
+          lowest_bin?: number
+          net_profit?: number
+          price_paid?: number
+          sold_price?: number
+          tax_amount?: number
+          tax_percent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

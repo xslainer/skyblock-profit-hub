@@ -1,15 +1,72 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Trade, ProfitMetrics, LeaderboardItem } from '@/types/trade';
-import { loadTrades, saveTrades, addTrade as addTradeToStorage, updateTrade as updateTradeInStorage, deleteTrade as deleteTradeFromStorage, clearAllTrades as clearAllTradesFromStorage } from '@/utils/storage';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export function useTrades() {
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
-  // Load trades on mount
-  useEffect(() => {
-    const loadedTrades = loadTrades();
-    setTrades(loadedTrades);
-  }, []);
+  // Fetch trades from Supabase
+  const fetchTrades = async () => {
+    if (!isAuthenticated || !user) {
+      setTrades([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('trades')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date_time', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching trades:', error);
+        toast({
+          title: "Error loading trades",
+          description: "Failed to load your trade history. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Convert database format to frontend format
+      const formattedTrades: Trade[] = (data || []).map(trade => ({
+        id: trade.id,
+        itemName: trade.item_name,
+        category: trade.category as any,
+        lowestBin: trade.lowest_bin,
+        craftCost: trade.craft_cost,
+        pricePaid: trade.price_paid,
+        ahAverageValue: trade.ah_average_value,
+        lowballPercent: trade.lowball_percent,
+        soldPrice: trade.sold_price,
+        taxPercent: trade.tax_percent,
+        taxAmount: trade.tax_amount,
+        netProfit: trade.net_profit,
+        dateTime: new Date(trade.date_time),
+        costBasis: trade.cost_basis as any,
+        lowballBasis: trade.lowball_basis as any,
+      }));
+
+      setTrades(formattedTrades);
+    } catch (error) {
+      console.error('Error in fetchTrades:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while loading trades.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Calculate profit metrics
   const metrics = useMemo((): ProfitMetrics => {
@@ -31,7 +88,6 @@ export function useTrades() {
         .reduce((sum, trade) => sum + trade.netProfit, 0),
     };
   }, [trades]);
-
 
   // Generate leaderboard of items by profit
   const leaderboard = useMemo((): LeaderboardItem[] => {
@@ -62,33 +118,162 @@ export function useTrades() {
       .sort((a, b) => b.totalProfit - a.totalProfit);
   }, [trades]);
 
-  const addTrade = (newTrade: Trade) => {
-    const updatedTrades = addTradeToStorage(newTrade);
-    setTrades(updatedTrades);
+  // Add a new trade to Supabase
+  const addTrade = async (trade: Trade) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to add trades.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('trades')
+        .insert({
+          user_id: user.id,
+          item_name: trade.itemName,
+          category: trade.category,
+          lowest_bin: trade.lowestBin,
+          craft_cost: trade.craftCost,
+          price_paid: trade.pricePaid,
+          ah_average_value: trade.ahAverageValue,
+          lowball_percent: trade.lowballPercent,
+          sold_price: trade.soldPrice,
+          tax_percent: trade.taxPercent,
+          tax_amount: trade.taxAmount,
+          net_profit: trade.netProfit,
+          date_time: trade.dateTime.toISOString(),
+          cost_basis: trade.costBasis,
+          lowball_basis: trade.lowballBasis,
+        });
+
+      if (error) {
+        console.error('Error adding trade:', error);
+        toast({
+          title: "Error adding trade",
+          description: "Failed to save your trade. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Refresh trades list
+      await fetchTrades();
+    } catch (error) {
+      console.error('Error in addTrade:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while adding the trade.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const updateTrade = (updatedTrade: Trade) => {
-    const updatedTrades = updateTradeInStorage(updatedTrade);
-    setTrades(updatedTrades);
+  // Delete a trade from Supabase
+  const deleteTrade = async (tradeId: string) => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to delete trades.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('trades')
+        .delete()
+        .eq('id', tradeId)
+        .eq('user_id', user.id); // Ensure user can only delete their own trades
+
+      if (error) {
+        console.error('Error deleting trade:', error);
+        toast({
+          title: "Error deleting trade",
+          description: "Failed to delete the trade. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Refresh trades list
+      await fetchTrades();
+      
+      toast({
+        title: "Trade deleted",
+        description: "The trade has been successfully removed.",
+      });
+    } catch (error) {
+      console.error('Error in deleteTrade:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the trade.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteTrade = (tradeId: string) => {
-    const updatedTrades = deleteTradeFromStorage(tradeId);
-    setTrades(updatedTrades);
+  // Clear all trades (optional method for compatibility)
+  const clearAllTrades = async () => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to clear trades.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('trades')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error clearing trades:', error);
+        toast({
+          title: "Error clearing trades",
+          description: "Failed to clear all trades. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Refresh trades list
+      await fetchTrades();
+      
+      toast({
+        title: "All trades cleared",
+        description: "All your trades have been successfully removed.",
+      });
+    } catch (error) {
+      console.error('Error in clearAllTrades:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while clearing trades.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const clearAllTrades = () => {
-    const updatedTrades = clearAllTradesFromStorage();
-    setTrades(updatedTrades);
-  };
+  // Load trades when component mounts or user changes
+  useEffect(() => {
+    fetchTrades();
+  }, [user, isAuthenticated]);
 
   return {
     trades,
+    loading,
     metrics,
     leaderboard,
     addTrade,
-    updateTrade,
     deleteTrade,
-    clearAllTrades
+    clearAllTrades,
+    refetch: fetchTrades,
   };
 }
