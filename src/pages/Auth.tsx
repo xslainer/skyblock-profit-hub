@@ -15,6 +15,9 @@ export function Auth() {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    username: '',
+    displayName: '',
+    ingameName: '',
   });
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -43,7 +46,12 @@ export function Auth() {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: redirectUrl
+          emailRedirectTo: redirectUrl,
+          data: {
+            username: formData.username,
+            display_name: formData.displayName,
+            ingame_name: formData.ingameName,
+          }
         }
       });
 
@@ -127,6 +135,7 @@ export function Auth() {
   };
 
   const isFormValid = isValidEmail(formData.email) && formData.password.length >= 6;
+  const isSignUpFormValid = isFormValid && formData.username.trim() && formData.displayName.trim() && formData.ingameName.trim();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
@@ -206,6 +215,56 @@ export function Auth() {
 
               <TabsContent value="signup" className="space-y-4">
                 <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-username">Username</Label>
+                      <Input
+                        id="signup-username"
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                        placeholder="Choose a unique username"
+                        className="transition-all duration-200 focus:shadow-glow"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This will be your unique identifier
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-displayname">Display Name</Label>
+                      <Input
+                        id="signup-displayname"
+                        type="text"
+                        value={formData.displayName}
+                        onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                        placeholder="Your display name"
+                        className="transition-all duration-200 focus:shadow-glow"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        How others will see your name
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-ingamename">Minecraft IGN</Label>
+                    <Input
+                      id="signup-ingamename"
+                      type="text"
+                      value={formData.ingameName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, ingameName: e.target.value }))}
+                      placeholder="Your Minecraft username"
+                      className="transition-all duration-200 focus:shadow-glow"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your Hypixel Skyblock username
+                    </p>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
@@ -247,7 +306,7 @@ export function Auth() {
 
                   <Button
                     type="submit"
-                    disabled={!isFormValid || isLoading}
+                    disabled={!isSignUpFormValid || isLoading}
                     className="w-full h-11 bg-gradient-primary hover:opacity-90 transition-all duration-200"
                   >
                     <UserPlus className="w-4 h-4 mr-2" />

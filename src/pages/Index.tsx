@@ -8,15 +8,18 @@ import { Dashboard } from '@/components/Dashboard';
 import { AddTrade } from '@/components/AddTrade';
 import { ItemHistoryFiltered } from '@/components/ItemHistoryFiltered';
 import { Analytics } from '@/components/Analytics';
+import { ProfileSettings } from '@/components/ProfileSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn, LogOut, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, Loader2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useProfile } from '@/hooks/useProfile';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { trades, loading, metrics, leaderboard, addTrade, deleteTrade, clearAllTrades } = useTrades();
   const { user, loading: authLoading, signOut, isAuthenticated } = useAuth();
+  const { profile } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -110,6 +113,8 @@ const Index = () => {
         return <Analytics trades={trades} />;
       case 'history':
         return <ItemHistoryFiltered trades={trades} onDeleteTrade={deleteTrade} />;
+      case 'profile':
+        return <ProfileSettings />;
       default:
         return null;
     }
@@ -126,17 +131,29 @@ const Index = () => {
                 Skyblock Lowballing Tracker
               </h1>
               <p className="text-sm text-muted-foreground">
-                Welcome back, {user?.email}
+                Welcome back, {profile?.display_name || profile?.username || user?.email}
               </p>
             </div>
-            <Button 
-              onClick={handleSignOut}
-              variant="outline"
-              className="border-primary/20 hover:bg-primary/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setActiveTab('profile')}
+                variant="outline"
+                size="sm"
+                className="border-primary/20 hover:bg-primary/10"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Profile
+              </Button>
+              <Button 
+                onClick={handleSignOut}
+                variant="outline"
+                size="sm"
+                className="border-primary/20 hover:bg-primary/10"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
+              </Button>
+            </div>
           </div>
         </div>
       </div>
