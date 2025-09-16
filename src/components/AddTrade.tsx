@@ -25,9 +25,10 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     lowestBin: '',
     craftCost: '',
     pricePaid: '',
-    lowballPercent: '',
+    ahAverageValue: '',
     soldPrice: '',
     costBasis: 'pricePaid' as 'lowestBin' | 'craftCost' | 'pricePaid',
+    lowballBasis: 'lowestBin' as 'lowestBin' | 'craftCost',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,8 +37,18 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
   const lowestBinNum = parseShorthand(formData.lowestBin);
   const craftCostNum = parseShorthand(formData.craftCost);
   const pricePaidNum = parseShorthand(formData.pricePaid);
+  const ahAverageValueNum = parseShorthand(formData.ahAverageValue);
   const soldPriceNum = parseShorthand(formData.soldPrice);
-  const lowballPercentNum = parseFloat(formData.lowballPercent) || 0;
+  
+  // Calculate lowball % automatically based on basis selection
+  const getLowballBasisValue = () => {
+    return formData.lowballBasis === 'lowestBin' ? lowestBinNum : craftCostNum;
+  };
+  
+  const lowballBasisValue = getLowballBasisValue();
+  const lowballPercentNum = (pricePaidNum > 0 && lowballBasisValue > 0) 
+    ? 100 - ((pricePaidNum / lowballBasisValue) * 100)
+    : 0;
   
   const getCostBasis = () => {
     switch (formData.costBasis) {
@@ -66,6 +77,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       lowestBin: lowestBinNum,
       craftCost: craftCostNum,
       pricePaid: pricePaidNum,
+      ahAverageValue: ahAverageValueNum,
       lowballPercent: lowballPercentNum,
       soldPrice: soldPriceNum,
       taxPercent: calculations.taxPercent,
@@ -73,6 +85,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       netProfit: calculations.netProfit,
       dateTime: new Date(),
       costBasis: formData.costBasis,
+      lowballBasis: formData.lowballBasis,
     };
 
     onAddTrade(newTrade);
@@ -84,9 +97,10 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       lowestBin: '',
       craftCost: '',
       pricePaid: '',
-      lowballPercent: '',
+      ahAverageValue: '',
       soldPrice: '',
       costBasis: 'pricePaid',
+      lowballBasis: 'lowestBin',
     });
 
     setIsSubmitting(false);
@@ -144,7 +158,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
 
 
           {/* Price Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="lowestBin">Lowest BIN Price</Label>
               <Input
@@ -160,7 +174,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="craftCost">Craft Cost</Label>
+              <Label htmlFor="craftCost">Raw Craft Cost</Label>
               <Input
                 id="craftCost"
                 value={formData.craftCost}
@@ -186,23 +200,67 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
                 What you actually paid
               </p>
             </div>
-          </div>
 
-          {/* Lowball % and Sold Price */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="lowballPercent">Lowball %</Label>
+              <Label htmlFor="ahAverageValue">AH Average Value</Label>
               <Input
-                id="lowballPercent"
-                type="number"
-                value={formData.lowballPercent}
-                onChange={(e) => setFormData(prev => ({ ...prev, lowballPercent: e.target.value }))}
-                placeholder="e.g. 15"
-                min="0"
-                max="100"
-                step="0.1"
+                id="ahAverageValue"
+                value={formData.ahAverageValue}
+                onChange={(e) => setFormData(prev => ({ ...prev, ahAverageValue: e.target.value }))}
+                placeholder="e.g. 98m, 1.4b"
                 className="transition-all duration-200 focus:shadow-glow"
               />
+              <p className="text-xs text-muted-foreground">
+                Average auction house price
+              </p>
+            </div>
+          </div>
+
+          {/* Lowball Basis Selection */}
+          <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
+            <div>
+              <Label className="text-sm font-medium">
+                Lowball Calculation Basis
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                Choose which price to use for lowball % calculation
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { value: 'lowestBin', label: 'Lowest BIN', desc: 'Use market price' },
+                { value: 'craftCost', label: 'Raw Craft Cost', desc: 'Use material cost' },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, lowballBasis: option.value as any }))}
+                  className={cn(
+                    "p-3 rounded-lg border text-left transition-all duration-200",
+                    formData.lowballBasis === option.value
+                      ? "bg-primary text-primary-foreground border-primary shadow-glow"
+                      : "bg-background hover:bg-muted border-border"
+                  )}
+                >
+                  <div className="text-sm font-medium">{option.label}</div>
+                  <div className="text-xs opacity-75">{option.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Auto-calculated Lowball % and Sold Price */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Lowball % (Auto-calculated)</Label>
+              <div className="p-3 rounded-lg bg-muted/30 border border-dashed">
+                <div className="text-lg font-semibold">
+                  {lowballPercentNum > 0 ? `${lowballPercentNum.toFixed(2)}%` : '0%'}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  100 - (Price Paid ÷ {formData.lowballBasis === 'lowestBin' ? 'Lowest BIN' : 'Raw Craft Cost'}) × 100
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">
