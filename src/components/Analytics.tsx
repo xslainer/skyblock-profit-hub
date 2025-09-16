@@ -3,7 +3,7 @@ import { Trade } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip } from '@/components/ui/simple-chart';
 
 interface AnalyticsProps {
@@ -98,6 +98,17 @@ export function Analytics({ trades }: AnalyticsProps) {
     };
   }, [filteredTrades]);
 
+  // Profitable vs Loss trades data for pie chart
+  const profitLossData = useMemo(() => {
+    const profitable = filteredTrades.filter(t => t.netProfit > 0).length;
+    const loss = filteredTrades.filter(t => t.netProfit <= 0).length;
+    
+    return [
+      { name: 'Profitable', value: profitable, color: 'hsl(var(--success))' },
+      { name: 'Loss', value: loss, color: 'hsl(var(--destructive))' }
+    ];
+  }, [filteredTrades]);
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -175,7 +186,7 @@ export function Analytics({ trades }: AnalyticsProps) {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Profit Over Time Chart */}
         <Card>
           <CardHeader>
@@ -264,6 +275,58 @@ export function Analytics({ trades }: AnalyticsProps) {
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Profitable vs Loss Trades Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Trade Performance</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Breakdown of profitable vs loss trades
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={profitLossData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={120}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {profitLossData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => (
+                      <ChartTooltip
+                        active={active}
+                        payload={payload?.map(item => ({
+                          ...item,
+                          name: item.payload?.name,
+                          value: `${item.value} trades`,
+                          color: item.payload?.color
+                        }))}
+                        label=""
+                      />
+                    )}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value, entry) => (
+                      <span style={{ color: entry.color }}>{value}</span>
+                    )}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>

@@ -47,7 +47,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
   
   const lowballBasisValue = getLowballBasisValue();
   const lowballPercentNum = (pricePaidNum > 0 && lowballBasisValue > 0) 
-    ? 100 - ((pricePaidNum / lowballBasisValue) * 100)
+    ? (pricePaidNum / lowballBasisValue) * 100
     : 0;
   
   const getCostBasis = () => {
@@ -258,7 +258,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
                   {lowballPercentNum > 0 ? `${lowballPercentNum.toFixed(2)}%` : '0%'}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  100 - (Price Paid ÷ {formData.lowballBasis === 'lowestBin' ? 'Lowest BIN' : 'Raw Craft Cost'}) × 100
+                  (Price Paid ÷ {formData.lowballBasis === 'lowestBin' ? 'Lowest BIN' : 'Raw Craft Cost'}) × 100
                 </p>
               </div>
             </div>
