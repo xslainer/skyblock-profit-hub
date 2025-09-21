@@ -10,7 +10,7 @@ export function calculateTax(soldPrice: number): { taxPercent: number; taxAmount
     taxPercent = 3.5;
   }
   
-  const taxAmount = soldPrice * (taxPercent / 100);
+  const taxAmount = Math.round(soldPrice * (taxPercent / 100));
   
   return { taxPercent, taxAmount };
 }
@@ -56,7 +56,7 @@ export function calculateProfit(
 ): { taxPercent: number; taxAmount: number; netProfit: number } {
   const { taxPercent, taxAmount } = calculateTax(soldPrice);
   const taxedSoldPrice = soldPrice - taxAmount;
-  const netProfit = taxedSoldPrice - costBasis;
+  const netProfit = Math.round(taxedSoldPrice - costBasis);
   
   return { taxPercent, taxAmount, netProfit };
 }
