@@ -11,7 +11,7 @@ import { PlusCircle, Calculator } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface AddTradeProps {
-  onAddTrade: (trade: Trade) => void;
+  onAddTrade: (trade: Trade) => Promise<boolean>;
 }
 
 export function AddTrade({ onAddTrade }: AddTradeProps) {
@@ -88,20 +88,24 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       lowballBasis: formData.lowballBasis,
     };
 
-    onAddTrade(newTrade);
+    console.log('Submitting trade:', newTrade);
     
-    // Reset form
-    setFormData({
-      itemName: '',
-      category: '',
-      lowestBin: '',
-      craftCost: '',
-      pricePaid: '',
-      ahAverageValue: '',
-      soldPrice: '',
-      costBasis: 'pricePaid',
-      lowballBasis: 'lowestBin',
-    });
+    const success = await onAddTrade(newTrade);
+    
+    // Only reset form if trade was successfully added
+    if (success) {
+      setFormData({
+        itemName: '',
+        category: '',
+        lowestBin: '',
+        craftCost: '',
+        pricePaid: '',
+        ahAverageValue: '',
+        soldPrice: '',
+        costBasis: 'pricePaid',
+        lowballBasis: 'lowestBin',
+      });
+    }
 
     setIsSubmitting(false);
   };

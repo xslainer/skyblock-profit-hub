@@ -126,11 +126,13 @@ export function useTrades() {
         description: "Please sign in to add trades.",
         variant: "destructive",
       });
-      return;
+      return false;
     }
 
+    console.log('Adding trade for user:', user.id, 'Trade data:', trade);
+
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('trades')
         .insert({
           user_id: user.id,
@@ -148,20 +150,29 @@ export function useTrades() {
           date_time: trade.dateTime.toISOString(),
           cost_basis: trade.costBasis,
           lowball_basis: trade.lowballBasis,
-        });
+        })
+        .select();
 
       if (error) {
         console.error('Error adding trade:', error);
         toast({
           title: "Error adding trade",
-          description: "Failed to save your trade. Please try again.",
+          description: `Failed to save your trade: ${error.message}`,
           variant: "destructive",
         });
-        return;
+        return false;
       }
+
+      console.log('Trade added successfully:', data);
+      
+      toast({
+        title: "Trade added",
+        description: "Your trade has been successfully recorded.",
+      });
 
       // Refresh trades list
       await fetchTrades();
+      return true;
     } catch (error) {
       console.error('Error in addTrade:', error);
       toast({
@@ -169,6 +180,7 @@ export function useTrades() {
         description: "An unexpected error occurred while adding the trade.",
         variant: "destructive",
       });
+      return false;
     }
   };
 

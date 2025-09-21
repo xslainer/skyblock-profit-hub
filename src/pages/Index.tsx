@@ -34,13 +34,12 @@ const Index = () => {
     }
   };
 
-  const handleAddTrade = async (newTrade: any) => {
-    await addTrade(newTrade);
-    toast({
-      title: "Trade added successfully!",
-      description: `${newTrade.itemName} trade recorded with ${newTrade.netProfit >= 0 ? 'profit' : 'loss'} of ${Math.abs(newTrade.netProfit).toLocaleString()} coins`,
-    });
-    setActiveTab('dashboard');
+  const handleAddTrade = async (newTrade: any): Promise<boolean> => {
+    const success = await addTrade(newTrade);
+    if (success) {
+      setActiveTab('dashboard');
+    }
+    return success;
   };
 
   const handleLeaderboardItemClick = (item: LeaderboardItem) => {
