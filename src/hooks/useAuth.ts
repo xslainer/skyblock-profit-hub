@@ -6,6 +6,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -28,12 +29,27 @@ export function useAuth() {
   }, []);
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (!error) {
+    // Prevent multiple simultaneous logout calls
+    if (isSigningOut) {
+      return { error: null };
+    }
+    
+    setIsSigningOut(true);
+    
+    try {
+      // Clear local state first to prevent multiple calls
       setUser(null);
       setSession(null);
+      
+      // Then call Supabase signOut
+      const { error } = await supabase.auth.signOut();
+      return { error };
+    } catch (error) {
+      console.error('Sign out error:', error);
+      return { error };
+    } finally {
+      setIsSigningOut(false);
     }
-    return { error };
   };
 
   return {
@@ -42,5 +58,6 @@ export function useAuth() {
     loading,
     signOut,
     isAuthenticated: !!user,
+    isSigningOut,
   };
 }

@@ -18,18 +18,31 @@ import { useProfile } from '@/hooks/useProfile';
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { trades, loading, metrics, leaderboard, addTrade, deleteTrade, clearAllTrades } = useTrades();
-  const { user, loading: authLoading, signOut, isAuthenticated } = useAuth();
+  const { user, loading: authLoading, signOut, isAuthenticated, isSigningOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (!error) {
-      toast({
-        title: "Signed out successfully",
-        description: "You have been logged out.",
-      });
+    try {
+      const { error } = await signOut();
+      if (!error) {
+        toast({
+          title: "Signed out successfully",
+          description: "You have been logged out.",
+        });
+      } else {
+        toast({
+          title: "Sign out error",
+          description: error.message || "Failed to sign out. Please try again.",
+          variant: "destructive",
+        });
+      }
+      // Always navigate to auth page regardless of error
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if there's an error, navigate to auth page
       navigate('/auth');
     }
   };
@@ -145,12 +158,17 @@ const Index = () => {
               </Button>
               <Button 
                 onClick={handleSignOut}
+                disabled={isSigningOut}
                 variant="outline"
                 size="sm"
                 className="border-primary/20 hover:bg-primary/10"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
+                {isSigningOut ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <LogOut className="w-4 h-4 mr-2" />
+                )}
+                {isSigningOut ? 'Signing Out...' : 'Sign Out'}
               </Button>
             </div>
           </div>
