@@ -159,8 +159,14 @@ export function Analytics({ trades }: AnalyticsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {averages.avgLowballPercent.toFixed(1)}%
+            <div className={`text-2xl font-bold ${
+              averages.avgLowballPercent > 0 ? 'text-success' : 
+              averages.avgLowballPercent < 0 ? 'text-destructive' : 'text-foreground'
+            }`}>
+              {averages.avgLowballPercent !== 0 ? 
+                `${averages.avgLowballPercent >= 0 ? '+' : ''}${averages.avgLowballPercent.toFixed(1)}%` : 
+                '0%'
+              }
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Average discount received

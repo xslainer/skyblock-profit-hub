@@ -46,6 +46,9 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
   };
   
   const lowballBasisValue = getLowballBasisValue();
+  // Fixed formula: (reference - paid) / reference * 100
+  // Positive values = good lowball (paid less than reference)
+  // Negative values = overpaid (paid more than reference)
   const lowballPercentNum = (pricePaidNum > 0 && lowballBasisValue > 0) 
     ? ((lowballBasisValue - pricePaidNum) / lowballBasisValue) * 100
     : 0;
@@ -255,17 +258,20 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
 
           {/* Auto-calculated Lowball % and Sold Price */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Lowball % (Auto-calculated)</Label>
-              <div className="p-3 rounded-lg bg-muted/30 border border-dashed">
-                <div className="text-lg font-semibold">
-                  {lowballPercentNum > 0 ? `${lowballPercentNum.toFixed(2)}%` : '0%'}
+              <div className="space-y-2">
+                <Label>Lowball % (Auto-calculated)</Label>
+                <div className="p-3 rounded-lg bg-muted/30 border border-dashed">
+                  <div className={cn(
+                    "text-lg font-semibold",
+                    lowballPercentNum > 0 ? "text-success" : lowballPercentNum < 0 ? "text-destructive" : "text-foreground"
+                  )}>
+                    {lowballPercentNum !== 0 ? `${lowballPercentNum >= 0 ? '+' : ''}${lowballPercentNum.toFixed(2)}%` : '0%'}
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    ({formData.lowballBasis === 'lowestBin' ? 'Lowest BIN' : 'Raw Craft Cost'} - Price Paid) ÷ {formData.lowballBasis === 'lowestBin' ? 'Lowest BIN' : 'Raw Craft Cost'} × 100
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  ({formData.lowballBasis === 'lowestBin' ? 'Lowest BIN' : 'Raw Craft Cost'} - Price Paid) ÷ {formData.lowballBasis === 'lowestBin' ? 'Lowest BIN' : 'Raw Craft Cost'} × 100
-                </p>
               </div>
-            </div>
 
             <div className="space-y-2">
               <Label htmlFor="soldPrice">Price Sold For</Label>
