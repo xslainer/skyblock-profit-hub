@@ -19,17 +19,20 @@ export function calculateTax(soldPrice: number): { taxPercent: number; taxAmount
 export function parseShorthand(value: string): number {
   const cleanValue = value.toString().toLowerCase().replace(/,/g, '');
   
+  let result = 0;
+  
   if (cleanValue.includes('k')) {
-    return parseFloat(cleanValue.replace('k', '')) * 1_000;
-  }
-  if (cleanValue.includes('m')) {
-    return parseFloat(cleanValue.replace('m', '')) * 1_000_000;
-  }
-  if (cleanValue.includes('b')) {
-    return parseFloat(cleanValue.replace('b', '')) * 1_000_000_000;
+    result = parseFloat(cleanValue.replace('k', '')) * 1_000;
+  } else if (cleanValue.includes('m')) {
+    result = parseFloat(cleanValue.replace('m', '')) * 1_000_000;
+  } else if (cleanValue.includes('b')) {
+    result = parseFloat(cleanValue.replace('b', '')) * 1_000_000_000;
+  } else {
+    result = parseFloat(cleanValue) || 0;
   }
   
-  return parseFloat(cleanValue) || 0;
+  // Round to whole number since database expects bigint
+  return Math.round(result);
 }
 
 // Format numbers with commas and shorthand
