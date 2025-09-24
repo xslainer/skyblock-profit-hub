@@ -16,7 +16,7 @@ interface AddTradeProps {
 
 export function AddTrade({ onAddTrade }: AddTradeProps) {
   const categories: TradeCategory[] = [
-    'Armors', 'Swords', 'Mage weapons', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
+    'Armors', 'Swords', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
   ];
 
   const [formData, setFormData] = useState({

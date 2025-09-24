@@ -17,7 +17,7 @@ import { useProfile } from '@/hooks/useProfile';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { trades, loading, metrics, leaderboard, addTrade, deleteTrade, clearAllTrades } = useTrades();
+  const { trades, loading, metrics, leaderboard, addTrade, updateTrade, deleteTrade, clearAllTrades } = useTrades();
   const { user, loading: authLoading, signOut, isAuthenticated, isSigningOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
@@ -124,7 +124,7 @@ const Index = () => {
       case 'analytics':
         return <Analytics trades={trades} />;
       case 'history':
-        return <ItemHistoryFiltered trades={trades} onDeleteTrade={deleteTrade} />;
+        return <ItemHistoryFiltered trades={trades} onDeleteTrade={deleteTrade} onUpdateTrade={updateTrade} />;
       case 'profile':
         return <ProfileSettings />;
       default:
@@ -143,7 +143,7 @@ const Index = () => {
                 Skyblock Lowballing Tracker
               </h1>
               <p className="text-sm text-muted-foreground">
-                Welcome back, {profile?.display_name || profile?.username || user?.email}
+                Welcome back, {profile?.ingame_name || profile?.display_name || user?.email}
               </p>
             </div>
             <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,17 +19,27 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
   const [isSaving, setIsSaving] = useState(false);
   
   const [formData, setFormData] = useState({
-    username: profile?.username || '',
     displayName: profile?.display_name || '',
     ingameName: profile?.ingame_name || '',
     bio: profile?.bio || '',
     avatarUrl: profile?.avatar_url || '',
   });
 
+  // Update formData when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        displayName: profile.display_name || '',
+        ingameName: profile.ingame_name || '',
+        bio: profile.bio || '',
+        avatarUrl: profile.avatar_url || '',
+      });
+    }
+  }, [profile]);
+
   const handleSave = async () => {
     setIsSaving(true);
     const success = await updateProfile({
-      username: formData.username,
       display_name: formData.displayName,
       ingame_name: formData.ingameName,
       bio: formData.bio,
@@ -44,7 +54,6 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
 
   const handleCancel = () => {
     setFormData({
-      username: profile?.username || '',
       displayName: profile?.display_name || '',
       ingameName: profile?.ingame_name || '',
       bio: profile?.bio || '',
@@ -106,19 +115,16 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
           <Avatar className="w-20 h-20">
             <AvatarImage src={profile?.avatar_url || ''} />
             <AvatarFallback className="text-lg">
-              {profile?.display_name?.[0]?.toUpperCase() || profile?.username?.[0]?.toUpperCase() || 'U'}
+              {profile?.display_name?.[0]?.toUpperCase() || profile?.ingame_name?.[0]?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
           <div className="space-y-2">
             <h3 className="text-xl font-semibold">
-              {profile?.display_name || profile?.username || 'Unknown User'}
+              {profile?.display_name || 'Unknown User'}
             </h3>
             <div className="flex gap-2">
-              {profile?.username && (
-                <Badge variant="secondary">@{profile.username}</Badge>
-              )}
               {profile?.ingame_name && (
-                <Badge variant="outline">{profile.ingame_name}</Badge>
+                <Badge variant="outline">IGN: {profile.ingame_name}</Badge>
               )}
             </div>
           </div>
@@ -128,26 +134,14 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
       <CardContent className="space-y-6">
         {isEditing ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  placeholder="Your unique username"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="displayName">Display Name</Label>
-                <Input
-                  id="displayName"
-                  value={formData.displayName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
-                  placeholder="How others see your name"
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input
+                id="displayName"
+                value={formData.displayName}
+                onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                placeholder="How others see your name"
+              />
             </div>
 
             <div className="space-y-2">
@@ -183,16 +177,9 @@ export function ProfileSettings({ onClose }: ProfileSettingsProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm text-muted-foreground">Username</Label>
-                <p className="text-lg">{profile?.username || 'Not set'}</p>
-              </div>
-              
-              <div>
-                <Label className="text-sm text-muted-foreground">Display Name</Label>
-                <p className="text-lg">{profile?.display_name || 'Not set'}</p>
-              </div>
+            <div>
+              <Label className="text-sm text-muted-foreground">Display Name</Label>
+              <p className="text-lg">{profile?.display_name || 'Not set'}</p>
             </div>
 
             <div>

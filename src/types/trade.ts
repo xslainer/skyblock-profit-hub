@@ -1,7 +1,6 @@
 export type TradeCategory = 
   | 'Armors'
   | 'Swords'
-  | 'Mage weapons'
   | 'Bows'
   | 'Skins'
   | 'Dyes'

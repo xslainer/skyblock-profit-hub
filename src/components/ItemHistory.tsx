@@ -15,22 +15,25 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Filter, Trash2 } from 'lucide-react';
+import { Search, Filter, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { EditTradeDialog } from './EditTradeDialog';
 
 interface ItemHistoryProps {
   trades: Trade[];
   onDeleteTrade: (tradeId: string) => void;
+  onUpdateTrade?: (updatedTrade: Trade) => Promise<boolean>;
 }
 
-export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
+export function ItemHistory({ trades, onDeleteTrade, onUpdateTrade }: ItemHistoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<TradeCategory | 'all'>('all');
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
   
   const { toast } = useToast();
 
   const categories: TradeCategory[] = [
-    'Armors', 'Swords', 'Mage weapons', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
+    'Armors', 'Swords', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
   ];
 
 
@@ -65,6 +68,24 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
       title: "Trade deleted",
       description: `${trade.itemName} trade has been removed from history`,
     });
+  };
+
+  const handleEditTrade = (trade: Trade) => {
+    setEditingTrade(trade);
+  };
+
+  const handleUpdateTrade = async (updatedTrade: Trade): Promise<boolean> => {
+    if (onUpdateTrade) {
+      const success = await onUpdateTrade(updatedTrade);
+      if (success) {
+        toast({
+          title: "Trade updated",
+          description: `${updatedTrade.itemName} trade has been updated successfully`,
+        });
+      }
+      return success;
+    }
+    return false;
   };
 
   return (
@@ -169,30 +190,40 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
                         {new Date(trade.dateTime).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Trade</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete the trade for "{trade.itemName}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                className="bg-destructive hover:bg-destructive/90"
-                                onClick={() => handleDeleteTrade(trade)}
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-primary hover:text-primary-foreground hover:bg-primary"
+                            onClick={() => handleEditTrade(trade)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Trade</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete the trade for "{trade.itemName}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  className="bg-destructive hover:bg-destructive/90"
+                                  onClick={() => handleDeleteTrade(trade)}
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -202,6 +233,13 @@ export function ItemHistory({ trades, onDeleteTrade }: ItemHistoryProps) {
           </ScrollArea>
         )}
       </CardContent>
+
+      <EditTradeDialog
+        trade={editingTrade}
+        open={!!editingTrade}
+        onClose={() => setEditingTrade(null)}
+        onSave={handleUpdateTrade}
+      />
     </Card>
   );
 }

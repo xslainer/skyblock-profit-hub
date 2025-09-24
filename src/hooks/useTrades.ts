@@ -229,6 +229,68 @@ export function useTrades() {
     }
   };
 
+  // Update an existing trade in Supabase
+  const updateTrade = async (updatedTrade: Trade): Promise<boolean> => {
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to update trades.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('trades')
+        .update({
+          item_name: updatedTrade.itemName,
+          category: updatedTrade.category,
+          lowest_bin: updatedTrade.lowestBin,
+          craft_cost: updatedTrade.craftCost,
+          price_paid: updatedTrade.pricePaid,
+          ah_average_value: updatedTrade.ahAverageValue,
+          lowball_percent: updatedTrade.lowballPercent,
+          sold_price: updatedTrade.soldPrice,
+          tax_percent: updatedTrade.taxPercent,
+          tax_amount: updatedTrade.taxAmount,
+          net_profit: updatedTrade.netProfit,
+          cost_basis: updatedTrade.costBasis,
+          lowball_basis: updatedTrade.lowballBasis,
+        })
+        .eq('id', updatedTrade.id)
+        .eq('user_id', user.id); // Ensure user can only update their own trades
+
+      if (error) {
+        console.error('Error updating trade:', error);
+        toast({
+          title: "Error updating trade",
+          description: "Failed to update the trade. Please try again.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Refresh trades list
+      await fetchTrades();
+      
+      toast({
+        title: "Trade updated",
+        description: "The trade has been successfully updated.",
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('Error in updateTrade:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while updating the trade.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   // Clear all trades (optional method for compatibility)
   const clearAllTrades = async () => {
     if (!isAuthenticated || !user) {
@@ -284,6 +346,7 @@ export function useTrades() {
     metrics,
     leaderboard,
     addTrade,
+    updateTrade,
     deleteTrade,
     clearAllTrades,
     refetch: fetchTrades,
