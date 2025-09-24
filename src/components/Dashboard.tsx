@@ -3,6 +3,7 @@ import { Trade, ProfitMetrics, LeaderboardItem } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import { StatCard } from './StatCard';
 import { Leaderboard } from './Leaderboard';
+import { ProfitGoals } from './ProfitGoals';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -101,6 +102,9 @@ export function Dashboard({ trades, metrics, leaderboard, onLeaderboardItemClick
         <StatCard title="Daily Profit" value={metrics.daily} />
       </div>
 
+
+      {/* Profit Goals */}
+      <ProfitGoals metrics={metrics} />
 
       {/* Top 5 Most Profitable Items */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

@@ -4,10 +4,12 @@ import { parseShorthand, calculateProfit, formatNumber } from '@/utils/calculati
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Calculator } from 'lucide-react';
+import { PlusCircle, Calculator, Upload, X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface AddTradeProps {
@@ -29,7 +31,11 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     soldPrice: '',
     costBasis: 'pricePaid' as 'lowestBin' | 'craftCost' | 'pricePaid',
     lowballBasis: 'lowestBin' as 'lowestBin' | 'craftCost',
+    notes: '',
   });
+
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -86,10 +92,12 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       taxPercent: calculations.taxPercent,
       taxAmount: calculations.taxAmount,
       netProfit: calculations.netProfit,
-      dateTime: new Date(),
-      costBasis: formData.costBasis,
-      lowballBasis: formData.lowballBasis,
-    };
+        dateTime: new Date(),
+        costBasis: formData.costBasis,
+        lowballBasis: formData.lowballBasis,
+        notes: formData.notes || undefined,
+        imageUrl: imagePreview || undefined,
+      };
 
     console.log('Submitting trade:', newTrade);
     
@@ -107,7 +115,10 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
         soldPrice: '',
         costBasis: 'pricePaid',
         lowballBasis: 'lowestBin',
+        notes: '',
       });
+      setSelectedImage(null);
+      setImagePreview(null);
     }
 
     setIsSubmitting(false);

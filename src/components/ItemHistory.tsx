@@ -161,7 +161,16 @@ export function ItemHistory({ trades, onDeleteTrade, onUpdateTrade }: ItemHistor
                   const lowballPercent = calculateLowballPercent(trade);
                   return (
                     <TableRow key={trade.id}>
-                      <TableCell className="font-medium">{trade.itemName}</TableCell>
+                    <TableCell className="font-medium">
+                      <button 
+                        className="text-primary hover:underline"
+                        onClick={() => {
+                          window.location.href = `/item/${encodeURIComponent(trade.itemName)}`;
+                        }}
+                      >
+                        {trade.itemName}
+                      </button>
+                    </TableCell>
                       <TableCell>
                         <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
                           {trade.category}

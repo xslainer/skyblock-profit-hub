@@ -47,10 +47,16 @@ export function Leaderboard({ items, onItemClick }: LeaderboardProps) {
                   )}>
                     {index + 1}
                   </div>
-                  <div className="text-left">
-                    <p className="font-medium group-hover:text-primary transition-colors">
-                      {item.itemName}
-                    </p>
+                   <div className="text-left">
+                     <button 
+                       className="font-medium text-primary hover:underline text-left"
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         window.location.href = `/item/${encodeURIComponent(item.itemName)}`;
+                       }}
+                     >
+                       {item.itemName}
+                     </button>
                     <p className="text-xs text-muted-foreground">
                       {item.tradeCount} trades • Avg: +{formatNumber(item.averageProfit)}
                     </p>

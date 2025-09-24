@@ -3,6 +3,7 @@ import { Trade } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip } from '@/components/ui/simple-chart';
 
@@ -11,9 +12,11 @@ interface AnalyticsProps {
 }
 
 type TimeRange = 'day' | 'week' | 'month' | 'year';
+type ChartTimeFrame = 'daily' | 'weekly' | 'monthly';
 
 export function Analytics({ trades }: AnalyticsProps) {
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange>('month');
+  const [chartTimeFrame, setChartTimeFrame] = useState<ChartTimeFrame>('daily');
 
   // Get filtered trades based on time range
   const getDateRange = (range: TimeRange) => {
@@ -35,26 +38,48 @@ export function Analytics({ trades }: AnalyticsProps) {
     return trades.filter(trade => trade.dateTime >= startDate);
   }, [trades, selectedTimeRange]);
 
-  // Profit over time data
+  // Enhanced profit over time data with time frame support
   const profitOverTime = useMemo(() => {
     const dataMap = new Map<string, number>();
     
     filteredTrades.forEach(trade => {
-      const dateKey = trade.dateTime.toISOString().split('T')[0]; // YYYY-MM-DD format
+      let dateKey: string;
+      let dateFormat: Intl.DateTimeFormatOptions;
+      
+      switch (chartTimeFrame) {
+        case 'weekly':
+          // Get start of week (Sunday)
+          const weekStart = new Date(trade.dateTime);
+          weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+          dateKey = weekStart.toISOString().split('T')[0];
+          dateFormat = { month: 'short', day: 'numeric' };
+          break;
+        case 'monthly':
+          // Get start of month
+          const monthStart = new Date(trade.dateTime.getFullYear(), trade.dateTime.getMonth(), 1);
+          dateKey = monthStart.toISOString().split('T')[0];
+          dateFormat = { month: 'short', year: 'numeric' };
+          break;
+        default: // daily
+          dateKey = trade.dateTime.toISOString().split('T')[0];
+          dateFormat = { month: 'short', day: 'numeric' };
+      }
+      
       const currentProfit = dataMap.get(dateKey) || 0;
       dataMap.set(dateKey, currentProfit + trade.netProfit);
     });
 
     return Array.from(dataMap.entries())
       .map(([date, profit]) => ({
-        date: new Date(date).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
-        }) as string,
+        date: new Date(date).toLocaleDateString('en-US', 
+          chartTimeFrame === 'monthly' 
+            ? { month: 'short', year: 'numeric' }
+            : { month: 'short', day: 'numeric' }
+        ),
         profit: Math.round(profit)
       }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  }, [filteredTrades]);
+  }, [filteredTrades, chartTimeFrame]);
 
   // Items traded per day data
   const itemsPerDay = useMemo(() => {
@@ -96,6 +121,36 @@ export function Analytics({ trades }: AnalyticsProps) {
       avgLowballPercent: totalLowballPercent / filteredTrades.length,
       avgProfitPerItem: totalProfit / filteredTrades.length
     };
+  }, [filteredTrades]);
+
+  // Profit by category data for donut chart
+  const profitByCategory = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    
+    filteredTrades.forEach(trade => {
+      const currentProfit = categoryMap.get(trade.category) || 0;
+      categoryMap.set(trade.category, currentProfit + trade.netProfit);
+    });
+
+    const colors = [
+      'hsl(var(--primary))',
+      'hsl(var(--secondary))',
+      'hsl(var(--accent))',
+      'hsl(var(--success))',
+      'hsl(var(--warning))',
+      'hsl(var(--destructive))',
+      'hsl(var(--muted))',
+    ];
+
+    return Array.from(categoryMap.entries())
+      .map(([category, profit], index) => ({
+        name: category,
+        value: Math.abs(profit), // Use absolute value for chart display
+        profit: profit, // Keep original for color logic
+        color: colors[index % colors.length]
+      }))
+      .filter(item => item.value > 0)
+      .sort((a, b) => b.value - a.value);
   }, [filteredTrades]);
 
   // Profitable vs Loss trades data for pie chart
@@ -192,14 +247,41 @@ export function Analytics({ trades }: AnalyticsProps) {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Profit Over Time Chart */}
-        <Card>
+        <Card className="xl:col-span-2">
           <CardHeader>
-            <CardTitle>Profit Over Time</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Daily profit trends for the selected period
-            </p>
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle>Enhanced Profit Over Time</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Profit trends aggregated by your selected time frame
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant={chartTimeFrame === 'daily' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setChartTimeFrame('daily')}
+                >
+                  Daily
+                </Button>
+                <Button
+                  variant={chartTimeFrame === 'weekly' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setChartTimeFrame('weekly')}
+                >
+                  Weekly
+                </Button>
+                <Button
+                  variant={chartTimeFrame === 'monthly' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setChartTimeFrame('monthly')}
+                >
+                  Monthly
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <ChartContainer className="h-[300px]">
@@ -236,6 +318,58 @@ export function Analytics({ trades }: AnalyticsProps) {
                     dot={{ fill: "hsl(var(--primary))", strokeWidth: 2, r: 4 }}
                   />
                 </LineChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Profit by Category Donut Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Profit by Category</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Breakdown of profits by item category
+            </p>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={profitByCategory}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={120}
+                    paddingAngle={2}
+                    dataKey="value"
+                  >
+                    {profitByCategory.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) => (
+                      <ChartTooltip
+                        active={active}
+                        payload={payload?.map(item => ({
+                          ...item,
+                          name: item.payload?.name,
+                          value: `${formatNumber(item.payload?.profit)} coins`,
+                          color: item.payload?.color
+                        }))}
+                        label=""
+                      />
+                    )}
+                  />
+                  <Legend
+                    verticalAlign="bottom"
+                    height={36}
+                    formatter={(value, entry) => (
+                      <span style={{ color: entry.color }}>{value}</span>
+                    )}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>

@@ -10,6 +10,7 @@ const tabs = [
   { id: 'add-trade', label: 'Add Trade' },
   { id: 'analytics', label: 'Analytics' },
   { id: 'history', label: 'Item History' },
+  { id: 'inventory', label: 'Inventory' },
   { id: 'profile', label: 'Profile' },
 ];
 

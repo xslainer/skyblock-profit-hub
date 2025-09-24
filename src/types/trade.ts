@@ -23,6 +23,25 @@ export interface Trade {
   dateTime: Date;
   costBasis: 'lowestBin' | 'craftCost' | 'pricePaid'; // Which cost to use for profit calc
   lowballBasis: 'lowestBin' | 'craftCost'; // Which price to use for lowball % calculation
+  notes?: string; // Optional notes field
+  imageUrl?: string; // Optional image URL for trade
+}
+
+export interface InventoryItem {
+  id: string;
+  itemName: string;
+  category: TradeCategory;
+  datePurchased: Date;
+  pricePaid: number;
+  currentLowestBin: number;
+  notes?: string;
+  imageUrl?: string;
+}
+
+export interface UserGoals {
+  daily: number;
+  weekly: number;
+  monthly: number;
 }
 
 export interface ProfitMetrics {

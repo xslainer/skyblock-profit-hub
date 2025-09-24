@@ -125,6 +125,15 @@ const Index = () => {
         return <Analytics trades={trades} />;
       case 'history':
         return <ItemHistoryFiltered trades={trades} onDeleteTrade={deleteTrade} onUpdateTrade={updateTrade} />;
+      case 'inventory':
+        return (
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight mb-6">Inventory</h2>
+            <p className="text-muted-foreground mb-8">
+              This feature is coming soon! Track items you've bought but haven't sold yet.
+            </p>
+          </div>
+        );
       case 'profile':
         return <ProfileSettings />;
       default:
