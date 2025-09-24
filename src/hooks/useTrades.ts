@@ -340,12 +340,27 @@ export function useTrades() {
     fetchTrades();
   }, [user, isAuthenticated]);
 
+  // Add multiple trades at once
+  const addTrades = async (tradesToAdd: Trade[]): Promise<boolean> => {
+    try {
+      for (const trade of tradesToAdd) {
+        const success = await addTrade(trade);
+        if (!success) return false;
+      }
+      return true;
+    } catch (error) {
+      console.error('Error adding trades:', error);
+      return false;
+    }
+  };
+
   return {
     trades,
     loading,
     metrics,
     leaderboard,
     addTrade,
+    addTrades,
     updateTrade,
     deleteTrade,
     clearAllTrades,

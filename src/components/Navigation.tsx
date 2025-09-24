@@ -11,6 +11,7 @@ const tabs = [
   { id: 'analytics', label: 'Analytics' },
   { id: 'history', label: 'Item History' },
   { id: 'inventory', label: 'Inventory' },
+  { id: 'bulk-entry', label: 'Bulk Entry' },
   { id: 'profile', label: 'Profile' },
 ];
 

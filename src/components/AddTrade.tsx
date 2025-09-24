@@ -10,6 +10,8 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusCircle, Calculator, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { TradeTemplates } from './TradeTemplates';
+import { OpportunityCalculator } from './OpportunityCalculator';
 import { cn } from '@/lib/utils';
 
 interface AddTradeProps {

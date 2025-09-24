@@ -59,3 +59,12 @@ export interface LeaderboardItem {
   tradeCount: number;
   trades: Trade[];
 }
+
+export interface GameEvent {
+  id: string;
+  name: string;
+  type: string;
+  startDate: Date;
+  endDate: Date;
+  description?: string;
+}
