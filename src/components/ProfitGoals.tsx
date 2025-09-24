@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PriceInput } from '@/components/ui/price-input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Target, Edit } from 'lucide-react';
@@ -100,13 +101,12 @@ export function ProfitGoals({ metrics }: ProfitGoalsProps) {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="daily-goal">Daily Goal (coins)</Label>
-                <Input
+                <PriceInput
                   id="daily-goal"
-                  type="number"
-                  value={editingGoals.daily}
+                  value={editingGoals.daily.toString()}
                   onChange={(e) => setEditingGoals(prev => ({ 
                     ...prev, 
-                    daily: parseInt(e.target.value) || 0 
+                    daily: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0 
                   }))}
                   placeholder="Enter daily profit goal"
                 />
@@ -114,13 +114,12 @@ export function ProfitGoals({ metrics }: ProfitGoalsProps) {
               
               <div>
                 <Label htmlFor="weekly-goal">Weekly Goal (coins)</Label>
-                <Input
+                <PriceInput
                   id="weekly-goal"
-                  type="number"
-                  value={editingGoals.weekly}
+                  value={editingGoals.weekly.toString()}
                   onChange={(e) => setEditingGoals(prev => ({ 
                     ...prev, 
-                    weekly: parseInt(e.target.value) || 0 
+                    weekly: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0 
                   }))}
                   placeholder="Enter weekly profit goal"
                 />
@@ -128,13 +127,12 @@ export function ProfitGoals({ metrics }: ProfitGoalsProps) {
               
               <div>
                 <Label htmlFor="monthly-goal">Monthly Goal (coins)</Label>
-                <Input
+                <PriceInput
                   id="monthly-goal"
-                  type="number"
-                  value={editingGoals.monthly}
+                  value={editingGoals.monthly.toString()}
                   onChange={(e) => setEditingGoals(prev => ({ 
                     ...prev, 
-                    monthly: parseInt(e.target.value) || 0 
+                    monthly: parseInt(e.target.value.replace(/[^0-9]/g, '')) || 0 
                   }))}
                   placeholder="Enter monthly profit goal"
                 />

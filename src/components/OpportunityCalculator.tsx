@@ -3,6 +3,7 @@ import { parseShorthand, formatNumber, calculateTax } from '@/utils/calculations
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PriceInput } from '@/components/ui/price-input';
 import { Label } from '@/components/ui/label';
 import { Calculator, TrendingUp, Clock, DollarSign } from 'lucide-react';
 
@@ -70,7 +71,7 @@ export function OpportunityCalculator() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="current-price">Current Market Price</Label>
-            <Input
+            <PriceInput
               id="current-price"
               value={inputs.currentPrice}
               onChange={(e) => setInputs(prev => ({ ...prev, currentPrice: e.target.value }))}
@@ -80,7 +81,7 @@ export function OpportunityCalculator() {
           
           <div>
             <Label htmlFor="target-buy">Target Buy Price</Label>
-            <Input
+            <PriceInput
               id="target-buy"
               value={inputs.targetBuyPrice}
               onChange={(e) => setInputs(prev => ({ ...prev, targetBuyPrice: e.target.value }))}
@@ -90,7 +91,7 @@ export function OpportunityCalculator() {
           
           <div>
             <Label htmlFor="target-sell">Target Sell Price</Label>
-            <Input
+            <PriceInput
               id="target-sell"
               value={inputs.targetSellPrice}
               onChange={(e) => setInputs(prev => ({ ...prev, targetSellPrice: e.target.value }))}

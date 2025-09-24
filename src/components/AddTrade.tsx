@@ -3,6 +3,7 @@ import { Trade, TradeCategory } from '@/types/trade';
 import { parseShorthand, calculateProfit, formatNumber } from '@/utils/calculations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PriceInput } from '@/components/ui/price-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
@@ -181,7 +182,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="lowestBin">Lowest BIN Price</Label>
-              <Input
+              <PriceInput
                 id="lowestBin"
                 value={formData.lowestBin}
                 onChange={(e) => setFormData(prev => ({ ...prev, lowestBin: e.target.value }))}
@@ -195,7 +196,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
 
             <div className="space-y-2">
               <Label htmlFor="craftCost">Raw Craft Cost</Label>
-              <Input
+              <PriceInput
                 id="craftCost"
                 value={formData.craftCost}
                 onChange={(e) => setFormData(prev => ({ ...prev, craftCost: e.target.value }))}
@@ -209,7 +210,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
 
             <div className="space-y-2">
               <Label htmlFor="pricePaid">Price Paid</Label>
-              <Input
+              <PriceInput
                 id="pricePaid"
                 value={formData.pricePaid}
                 onChange={(e) => setFormData(prev => ({ ...prev, pricePaid: e.target.value }))}
@@ -223,7 +224,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
 
             <div className="space-y-2">
               <Label htmlFor="ahAverageValue">AH Average Value</Label>
-              <Input
+              <PriceInput
                 id="ahAverageValue"
                 value={formData.ahAverageValue}
                 onChange={(e) => setFormData(prev => ({ ...prev, ahAverageValue: e.target.value }))}
@@ -288,7 +289,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
 
             <div className="space-y-2">
               <Label htmlFor="soldPrice">Price Sold For</Label>
-              <Input
+              <PriceInput
                 id="soldPrice"
                 value={formData.soldPrice}
                 onChange={(e) => setFormData(prev => ({ ...prev, soldPrice: e.target.value }))}

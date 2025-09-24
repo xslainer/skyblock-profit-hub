@@ -4,6 +4,7 @@ import { calculateProfit, parseShorthand } from '@/utils/calculations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PriceInput } from '@/components/ui/price-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Plus, Trash2, Upload } from 'lucide-react';
@@ -189,35 +190,35 @@ export function BulkAddTrades({ onTradesAdded }: BulkAddTradesProps) {
                         </Select>
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <PriceInput
                           value={row.lowestBin}
                           onChange={(e) => updateRow(row.id, 'lowestBin', e.target.value)}
                           placeholder="e.g., 100m"
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <PriceInput
                           value={row.craftCost}
                           onChange={(e) => updateRow(row.id, 'craftCost', e.target.value)}
                           placeholder="e.g., 90m"
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <PriceInput
                           value={row.pricePaid}
                           onChange={(e) => updateRow(row.id, 'pricePaid', e.target.value)}
                           placeholder="e.g., 80m"
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <PriceInput
                           value={row.ahAverageValue}
                           onChange={(e) => updateRow(row.id, 'ahAverageValue', e.target.value)}
                           placeholder="e.g., 95m"
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
+                        <PriceInput
                           value={row.soldPrice}
                           onChange={(e) => updateRow(row.id, 'soldPrice', e.target.value)}
                           placeholder="e.g., 110m"
