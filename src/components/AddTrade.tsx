@@ -24,6 +24,7 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     'Armors', 'Swords', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
   ];
 
+  const [tradeStatus, setTradeStatus] = useState<'purchase' | 'completed'>('purchase');
   const [formData, setFormData] = useState({
     itemName: '',
     category: '' as TradeCategory | '',
@@ -91,16 +92,18 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
       pricePaid: pricePaidNum,
       ahAverageValue: ahAverageValueNum,
       lowballPercent: lowballPercentNum,
-      soldPrice: soldPriceNum,
+      soldPrice: tradeStatus === 'completed' ? soldPriceNum : 0,
       taxPercent: calculations.taxPercent,
       taxAmount: calculations.taxAmount,
       netProfit: calculations.netProfit,
-        dateTime: new Date(),
-        costBasis: formData.costBasis,
-        lowballBasis: formData.lowballBasis,
-        notes: formData.notes || undefined,
-        imageUrl: imagePreview || undefined,
-      };
+      dateTime: new Date(),
+      dateSold: tradeStatus === 'completed' ? new Date() : undefined,
+      costBasis: formData.costBasis,
+      lowballBasis: formData.lowballBasis,
+      status: tradeStatus === 'completed' ? 'completed' : 'inventory',
+      notes: formData.notes || undefined,
+      imageUrl: imagePreview || undefined,
+    };
 
     console.log('Submitting trade:', newTrade);
     
@@ -132,17 +135,45 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
     formData.lowestBin && 
     formData.craftCost && 
     formData.pricePaid &&
-    formData.soldPrice &&
-    soldPriceNum > 0 &&
-    costBasis > 0;
+    (tradeStatus === 'purchase' || (formData.soldPrice && soldPriceNum > 0));
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Add New Trade</h2>
-        <p className="text-muted-foreground">
-          Record your Hypixel Skyblock lowballing transactions
-        </p>
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Add New Trade</h2>
+          <p className="text-muted-foreground">
+            Record your Hypixel Skyblock lowballing transactions
+          </p>
+        </div>
+
+        {/* Trade Status Selector */}
+        <div className="flex gap-2 p-1 bg-muted rounded-lg">
+          <button
+            type="button"
+            onClick={() => setTradeStatus('purchase')}
+            className={cn(
+              "flex-1 py-2 px-4 rounded-md font-medium transition-all duration-200",
+              tradeStatus === 'purchase'
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Log a Purchase
+          </button>
+          <button
+            type="button"
+            onClick={() => setTradeStatus('completed')}
+            className={cn(
+              "flex-1 py-2 px-4 rounded-md font-medium transition-all duration-200",
+              tradeStatus === 'completed'
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            Log Completed Trade
+          </button>
+        </div>
       </div>
 
       <Card className="p-6">
@@ -270,8 +301,11 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
             </div>
           </div>
 
-          {/* Auto-calculated Lowball % and Sold Price */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Auto-calculated Lowball % and conditional Sold Price */}
+          <div className={cn(
+            "grid gap-4",
+            tradeStatus === 'completed' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
+          )}>
               <div className="space-y-2">
                 <Label>Lowball % (Auto-calculated)</Label>
                 <div className="p-3 rounded-lg bg-muted/30 border border-dashed">
@@ -287,20 +321,23 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
                 </div>
               </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="soldPrice">Price Sold For</Label>
-              <PriceInput
-                id="soldPrice"
-                value={formData.soldPrice}
-                onChange={(e) => setFormData(prev => ({ ...prev, soldPrice: e.target.value }))}
-                placeholder="e.g. 120m, 1.8b"
-                className="transition-all duration-200 focus:shadow-glow"
-              />
-            </div>
+            {tradeStatus === 'completed' && (
+              <div className="space-y-2">
+                <Label htmlFor="soldPrice">Price Sold For</Label>
+                <PriceInput
+                  id="soldPrice"
+                  value={formData.soldPrice}
+                  onChange={(e) => setFormData(prev => ({ ...prev, soldPrice: e.target.value }))}
+                  placeholder="e.g. 120m, 1.8b"
+                  className="transition-all duration-200 focus:shadow-glow"
+                />
+              </div>
+            )}
           </div>
 
-          {/* Cost Basis Selection */}
-          <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
+          {/* Cost Basis Selection - Only show for completed trades */}
+          {tradeStatus === 'completed' && (
+            <div className="p-4 rounded-lg bg-muted/50 border space-y-3">
             <div>
               <Label className="text-sm font-medium">
                 Cost Basis for Profit Calculation
@@ -331,10 +368,11 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
                 </button>
               ))}
             </div>
-          </div>
+            </div>
+          )}
 
-          {/* Real-time Calculations */}
-          {soldPriceNum > 0 && costBasis > 0 && (
+          {/* Real-time Calculations - Only show for completed trades */}
+          {tradeStatus === 'completed' && soldPriceNum > 0 && costBasis > 0 && (
             <Card className="p-4 bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
               <div className="flex items-center gap-2 mb-3">
                 <Calculator className="w-4 h-4 text-primary" />
@@ -373,7 +411,10 @@ export function AddTrade({ onAddTrade }: AddTradeProps) {
             className="w-full h-12 text-lg font-semibold bg-gradient-primary hover:opacity-90 transition-all duration-200"
           >
             <PlusCircle className="w-5 h-5 mr-2" />
-            {isSubmitting ? 'Adding Trade...' : 'Add Trade'}
+            {isSubmitting 
+              ? (tradeStatus === 'purchase' ? 'Adding to Inventory...' : 'Adding Trade...')
+              : (tradeStatus === 'purchase' ? 'Add to Inventory' : 'Add to Trade History')
+            }
           </Button>
         </form>
       </Card>

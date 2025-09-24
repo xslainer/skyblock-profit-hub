@@ -21,8 +21,10 @@ export interface Trade {
   taxAmount: number;
   netProfit: number;
   dateTime: Date;
+  dateSold?: Date; // Optional sold date
   costBasis: 'lowestBin' | 'craftCost' | 'pricePaid'; // Which cost to use for profit calc
   lowballBasis: 'lowestBin' | 'craftCost'; // Which price to use for lowball % calculation
+  status: 'inventory' | 'completed'; // Track if item is in inventory or completed
   notes?: string; // Optional notes field
   imageUrl?: string; // Optional image URL for trade
 }
@@ -33,7 +35,11 @@ export interface InventoryItem {
   category: TradeCategory;
   datePurchased: Date;
   pricePaid: number;
-  currentLowestBin: number;
+  lowestBin: number;
+  craftCost: number;
+  ahAverageValue: number;
+  lowballPercent: number;
+  lowballBasis: 'lowestBin' | 'craftCost';
   notes?: string;
   imageUrl?: string;
 }

@@ -5,35 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plus, Trash2, Package } from 'lucide-react';
+import { RefreshCw, Plus, Trash2, Package, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useTrades } from '@/hooks/useTrades';
+import { cn } from '@/lib/utils';
 
 export function Inventory() {
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([
-    // Sample data - in real app this would come from a database
-    {
-      id: '1',
-      itemName: 'Hyperion',
-      category: 'Swords',
-      datePurchased: new Date('2024-01-15'),
-      pricePaid: 850000000,
-      currentLowestBin: 920000000,
-    },
-    {
-      id: '2',
-      itemName: 'Necron Chestplate',
-      category: 'Armors',
-      datePurchased: new Date('2024-01-20'),
-      pricePaid: 45000000,
-      currentLowestBin: 42000000,
-    },
-  ]);
+  const { inventoryItems, loading, markAsSold, refetch } = useTrades();
   const { toast } = useToast();
 
   const inventoryKPIs = useMemo(() => {
     const totalItems = inventoryItems.length;
     const totalCost = inventoryItems.reduce((sum, item) => sum + item.pricePaid, 0);
-    const currentMarketValue = inventoryItems.reduce((sum, item) => sum + item.currentLowestBin, 0);
+    const currentMarketValue = inventoryItems.reduce((sum, item) => sum + item.lowestBin, 0);
     const unrealizedProfit = currentMarketValue - totalCost;
 
     return {
@@ -44,41 +28,47 @@ export function Inventory() {
     };
   }, [inventoryItems]);
 
+  const getDaysHeld = (datePurchased: Date) => {
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - datePurchased.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
+  const getDaysHeldColor = (days: number) => {
+    if (days <= 3) return "text-success";
+    if (days <= 10) return "text-warning";
+    return "text-destructive";
+  };
+
   const calculatePotentialProfit = (item: InventoryItem) => {
-    const grossProfit = item.currentLowestBin - item.pricePaid;
-    const ahTax = item.currentLowestBin * 0.01; // 1% AH tax
+    const grossProfit = item.lowestBin - item.pricePaid;
+    const ahTax = item.lowestBin * 0.01; // 1% AH tax
     return grossProfit - ahTax;
   };
 
   const refreshPrices = async () => {
     toast({
       title: "Refreshing prices...",
-      description: "Updating current market values from Hypixel API.",
+      description: "Updating current market values.",
     });
     
-    // TODO: Implement actual API call to update prices
-    setTimeout(() => {
-      toast({
-        title: "Prices updated",
-        description: "All item prices have been refreshed.",
-      });
-    }, 2000);
-  };
-
-  const markAsSold = (item: InventoryItem) => {
-    // TODO: Navigate to Add Trade form with pre-filled data
+    await refetch();
+    
     toast({
-      title: "Opening trade form",
-      description: `Pre-filling form for ${item.itemName}`,
+      title: "Prices updated",
+      description: "All item prices have been refreshed.",
     });
   };
 
-  const removeItem = (itemId: string) => {
-    setInventoryItems(prev => prev.filter(item => item.id !== itemId));
-    toast({
-      title: "Item removed",
-      description: "Item has been removed from inventory.",
-    });
+  const handleMarkAsSold = (item: InventoryItem) => {
+    // For now, just show a placeholder - in a real app this would open a modal or navigate to a form
+    const soldPrice = prompt(`Enter the price you sold ${item.itemName} for:`);
+    if (soldPrice) {
+      const numericPrice = parseFloat(soldPrice);
+      if (!isNaN(numericPrice)) {
+        markAsSold(item, numericPrice);
+      }
+    }
   };
 
   return (
@@ -192,7 +182,9 @@ export function Inventory() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item Name</TableHead>
+                    <TableHead>Category</TableHead>
                     <TableHead>Date Purchased</TableHead>
+                    <TableHead>Days Held</TableHead>
                     <TableHead>Price Paid</TableHead>
                     <TableHead>Current Lowest BIN</TableHead>
                     <TableHead>Potential Profit</TableHead>
@@ -202,6 +194,7 @@ export function Inventory() {
                 <TableBody>
                   {inventoryItems.map((item) => {
                     const potentialProfit = calculatePotentialProfit(item);
+                    const daysHeld = getDaysHeld(item.datePurchased);
                     return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
@@ -216,10 +209,21 @@ export function Inventory() {
                           </button>
                         </TableCell>
                         <TableCell>
+                          <Badge variant="outline">{item.category}</Badge>
+                        </TableCell>
+                        <TableCell>
                           {item.datePurchased.toLocaleDateString()}
                         </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4" />
+                            <span className={cn("font-medium", getDaysHeldColor(daysHeld))}>
+                              {daysHeld} days
+                            </span>
+                          </div>
+                        </TableCell>
                         <TableCell>{formatNumber(item.pricePaid)}</TableCell>
-                        <TableCell>{formatNumber(item.currentLowestBin)}</TableCell>
+                        <TableCell>{formatNumber(item.lowestBin)}</TableCell>
                         <TableCell>
                           <span className={potentialProfit >= 0 ? 'text-success' : 'text-destructive'}>
                             {potentialProfit >= 0 ? '+' : ''}{formatNumber(potentialProfit)}
@@ -230,7 +234,7 @@ export function Inventory() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => markAsSold(item)}
+                              onClick={() => handleMarkAsSold(item)}
                               className="text-success hover:bg-success/10"
                             >
                               Mark as Sold
@@ -238,7 +242,13 @@ export function Inventory() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => removeItem(item.id)}
+                              onClick={() => {
+                                // TODO: Implement delete functionality
+                                toast({
+                                  title: "Delete functionality",
+                                  description: "Delete functionality will be implemented soon.",
+                                });
+                              }}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>

@@ -1,11 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Trade, ProfitMetrics, LeaderboardItem } from '@/types/trade';
+import { Trade, ProfitMetrics, LeaderboardItem, InventoryItem } from '@/types/trade';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
 export function useTrades() {
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
@@ -51,11 +52,34 @@ export function useTrades() {
         taxAmount: trade.tax_amount,
         netProfit: trade.net_profit,
         dateTime: new Date(trade.date_time),
+        dateSold: (trade as any).date_sold ? new Date((trade as any).date_sold) : undefined,
         costBasis: trade.cost_basis as any,
         lowballBasis: trade.lowball_basis as any,
+        status: (trade as any).status || 'completed',
       }));
 
-      setTrades(formattedTrades);
+      // Separate completed trades from inventory items
+      const completedTrades = formattedTrades.filter(trade => trade.status === 'completed');
+      const inventoryTrades = formattedTrades.filter(trade => trade.status === 'inventory');
+      
+      // Convert inventory trades to inventory items
+      const formattedInventory: InventoryItem[] = inventoryTrades.map(trade => ({
+        id: trade.id,
+        itemName: trade.itemName,
+        category: trade.category,
+        datePurchased: trade.dateTime,
+        pricePaid: trade.pricePaid,
+        lowestBin: trade.lowestBin,
+        craftCost: trade.craftCost,
+        ahAverageValue: trade.ahAverageValue,
+        lowballPercent: trade.lowballPercent,
+        lowballBasis: trade.lowballBasis,
+        notes: trade.notes,
+        imageUrl: trade.imageUrl,
+      }));
+
+      setTrades(completedTrades);
+      setInventoryItems(formattedInventory);
     } catch (error) {
       console.error('Error in fetchTrades:', error);
       toast({
@@ -148,8 +172,10 @@ export function useTrades() {
           tax_amount: trade.taxAmount,
           net_profit: trade.netProfit,
           date_time: trade.dateTime.toISOString(),
+          date_sold: trade.dateSold?.toISOString(),
           cost_basis: trade.costBasis,
           lowball_basis: trade.lowballBasis,
+          status: trade.status,
         })
         .select();
 
@@ -255,8 +281,10 @@ export function useTrades() {
           tax_percent: updatedTrade.taxPercent,
           tax_amount: updatedTrade.taxAmount,
           net_profit: updatedTrade.netProfit,
+          date_sold: updatedTrade.dateSold?.toISOString(),
           cost_basis: updatedTrade.costBasis,
           lowball_basis: updatedTrade.lowballBasis,
+          status: updatedTrade.status,
         })
         .eq('id', updatedTrade.id)
         .eq('user_id', user.id); // Ensure user can only update their own trades
@@ -354,8 +382,36 @@ export function useTrades() {
     }
   };
 
+  // Convert inventory item to completed trade
+  const markAsSold = async (inventoryItem: InventoryItem, soldPrice: number, dateSold: Date = new Date()): Promise<boolean> => {
+    const completedTrade: Trade = {
+      id: inventoryItem.id,
+      itemName: inventoryItem.itemName,
+      category: inventoryItem.category,
+      lowestBin: inventoryItem.lowestBin,
+      craftCost: inventoryItem.craftCost,
+      pricePaid: inventoryItem.pricePaid,
+      ahAverageValue: inventoryItem.ahAverageValue,
+      lowballPercent: inventoryItem.lowballPercent,
+      soldPrice: soldPrice,
+      taxPercent: soldPrice >= 1000000 ? 1 : 0,
+      taxAmount: soldPrice >= 1000000 ? soldPrice * 0.01 : 0,
+      netProfit: soldPrice - inventoryItem.pricePaid - (soldPrice >= 1000000 ? soldPrice * 0.01 : 0),
+      dateTime: inventoryItem.datePurchased,
+      dateSold: dateSold,
+      costBasis: 'pricePaid',
+      lowballBasis: inventoryItem.lowballBasis,
+      status: 'completed',
+      notes: inventoryItem.notes,
+      imageUrl: inventoryItem.imageUrl,
+    };
+
+    return await updateTrade(completedTrade);
+  };
+
   return {
     trades,
+    inventoryItems,
     loading,
     metrics,
     leaderboard,
@@ -364,6 +420,7 @@ export function useTrades() {
     updateTrade,
     deleteTrade,
     clearAllTrades,
+    markAsSold,
     refetch: fetchTrades,
   };
 }

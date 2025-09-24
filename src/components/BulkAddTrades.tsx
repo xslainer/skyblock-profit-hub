@@ -107,7 +107,8 @@ export function BulkAddTrades({ onTradesAdded }: BulkAddTradesProps) {
         netProfit,
         dateTime: new Date(row.dateTime),
         costBasis: row.costBasis,
-        lowballBasis: row.lowballBasis
+        lowballBasis: row.lowballBasis,
+        status: 'completed'
       };
     });
 
