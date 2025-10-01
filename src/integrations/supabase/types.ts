@@ -57,6 +57,7 @@ export type Database = {
           cost_basis: string
           craft_cost: number
           created_at: string
+          date_sold: string | null
           date_time: string
           id: string
           item_name: string
@@ -66,6 +67,7 @@ export type Database = {
           net_profit: number
           price_paid: number
           sold_price: number
+          status: Database["public"]["Enums"]["trade_status"]
           tax_amount: number
           tax_percent: number
           updated_at: string
@@ -77,6 +79,7 @@ export type Database = {
           cost_basis: string
           craft_cost: number
           created_at?: string
+          date_sold?: string | null
           date_time?: string
           id?: string
           item_name: string
@@ -86,6 +89,7 @@ export type Database = {
           net_profit: number
           price_paid: number
           sold_price: number
+          status?: Database["public"]["Enums"]["trade_status"]
           tax_amount: number
           tax_percent: number
           updated_at?: string
@@ -97,6 +101,7 @@ export type Database = {
           cost_basis?: string
           craft_cost?: number
           created_at?: string
+          date_sold?: string | null
           date_time?: string
           id?: string
           item_name?: string
@@ -106,6 +111,7 @@ export type Database = {
           net_profit?: number
           price_paid?: number
           sold_price?: number
+          status?: Database["public"]["Enums"]["trade_status"]
           tax_amount?: number
           tax_percent?: number
           updated_at?: string
@@ -121,7 +127,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      trade_status: "Not Sold" | "Listed" | "Sold" | "inventory" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -248,6 +254,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      trade_status: ["Not Sold", "Listed", "Sold", "inventory", "completed"],
+    },
   },
 } as const
