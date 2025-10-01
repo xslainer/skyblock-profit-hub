@@ -9,10 +9,15 @@ import { RefreshCw, Plus, Trash2, Package, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTrades } from '@/hooks/useTrades';
 import { cn } from '@/lib/utils';
+import { MarkAsSoldDialog } from '@/components/MarkAsSoldDialog';
+import { useNavigate } from 'react-router-dom';
 
 export function Inventory() {
-  const { inventoryItems, loading, markAsSold, refetch } = useTrades();
+  const { inventoryItems, loading, markAsSold, refetch, deleteTrade } = useTrades();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const inventoryKPIs = useMemo(() => {
     const totalItems = inventoryItems.length;
@@ -61,13 +66,25 @@ export function Inventory() {
   };
 
   const handleMarkAsSold = (item: InventoryItem) => {
-    // For now, just show a placeholder - in a real app this would open a modal or navigate to a form
-    const soldPrice = prompt(`Enter the price you sold ${item.itemName} for:`);
-    if (soldPrice) {
-      const numericPrice = parseFloat(soldPrice);
-      if (!isNaN(numericPrice)) {
-        markAsSold(item, numericPrice);
-      }
+    setSelectedItem(item);
+    setIsDialogOpen(true);
+  };
+
+  const handleConfirmSale = async (item: InventoryItem, soldPrice: number, dateSold: Date) => {
+    await markAsSold(item, soldPrice, dateSold);
+    toast({
+      title: "Sale completed!",
+      description: `${item.itemName} has been moved to trade history.`,
+    });
+  };
+
+  const handleDelete = async (itemId: string) => {
+    if (confirm('Are you sure you want to delete this item from inventory?')) {
+      await deleteTrade(itemId);
+      toast({
+        title: "Item removed",
+        description: "The item has been deleted from your inventory.",
+      });
     }
   };
 
@@ -93,6 +110,7 @@ export function Inventory() {
           </Button>
           <Button
             className="bg-gradient-primary hover:opacity-90"
+            onClick={() => navigate('/add-trade')}
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Item
@@ -171,7 +189,10 @@ export function Inventory() {
                 <p>No items in inventory</p>
                 <p className="text-sm">Add items you've bought but haven't sold yet</p>
               </div>
-              <Button className="bg-gradient-primary hover:opacity-90">
+              <Button 
+                className="bg-gradient-primary hover:opacity-90"
+                onClick={() => navigate('/add-trade')}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Your First Item
               </Button>
@@ -242,13 +263,7 @@ export function Inventory() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                // TODO: Implement delete functionality
-                                toast({
-                                  title: "Delete functionality",
-                                  description: "Delete functionality will be implemented soon.",
-                                });
-                              }}
+                              onClick={() => handleDelete(item.id)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -263,6 +278,14 @@ export function Inventory() {
           )}
         </CardContent>
       </Card>
+
+      {/* Mark as Sold Dialog */}
+      <MarkAsSoldDialog
+        item={selectedItem}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onConfirm={handleConfirmSale}
+      />
     </div>
   );
 }

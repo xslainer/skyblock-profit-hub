@@ -30,9 +30,6 @@ interface BulkAddTradesProps {
 }
 
 export function BulkAddTrades({ onTradesAdded }: BulkAddTradesProps) {
-  const [rows, setRows] = useState<BulkTradeRow[]>([]);
-  const { toast } = useToast();
-
   const createEmptyRow = (): BulkTradeRow => ({
     id: crypto.randomUUID(),
     itemName: '',
@@ -47,6 +44,15 @@ export function BulkAddTrades({ onTradesAdded }: BulkAddTradesProps) {
     costBasis: 'lowestBin',
     lowballBasis: 'lowestBin'
   });
+
+  // Initialize with 3 empty rows
+  const [rows, setRows] = useState<BulkTradeRow[]>(() => [
+    createEmptyRow(),
+    createEmptyRow(),
+    createEmptyRow()
+  ]);
+  const { toast } = useToast();
+
 
   const addRow = () => {
     setRows(prev => [...prev, createEmptyRow()]);

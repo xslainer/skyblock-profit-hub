@@ -3,6 +3,7 @@ import { Trade, ProfitMetrics, LeaderboardItem, InventoryItem } from '@/types/tr
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { calculateProfit } from '@/utils/calculations';
 
 export function useTrades() {
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -384,6 +385,8 @@ export function useTrades() {
 
   // Convert inventory item to completed trade
   const markAsSold = async (inventoryItem: InventoryItem, soldPrice: number, dateSold: Date = new Date()): Promise<boolean> => {
+    const { taxPercent, taxAmount, netProfit } = calculateProfit(soldPrice, inventoryItem.pricePaid);
+    
     const completedTrade: Trade = {
       id: inventoryItem.id,
       itemName: inventoryItem.itemName,
@@ -394,9 +397,9 @@ export function useTrades() {
       ahAverageValue: inventoryItem.ahAverageValue,
       lowballPercent: inventoryItem.lowballPercent,
       soldPrice: soldPrice,
-      taxPercent: soldPrice >= 1000000 ? 1 : 0,
-      taxAmount: soldPrice >= 1000000 ? soldPrice * 0.01 : 0,
-      netProfit: soldPrice - inventoryItem.pricePaid - (soldPrice >= 1000000 ? soldPrice * 0.01 : 0),
+      taxPercent,
+      taxAmount,
+      netProfit,
       dateTime: inventoryItem.datePurchased,
       dateSold: dateSold,
       costBasis: 'pricePaid',
