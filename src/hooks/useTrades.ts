@@ -63,6 +63,11 @@ export function useTrades() {
       const completedTrades = formattedTrades.filter(trade => trade.status === 'completed');
       const inventoryTrades = formattedTrades.filter(trade => trade.status === 'inventory');
       
+      console.log('Total trades fetched:', formattedTrades.length);
+      console.log('Completed trades:', completedTrades.length);
+      console.log('Inventory trades:', inventoryTrades.length);
+      console.log('Inventory items:', inventoryTrades);
+      
       // Convert inventory trades to inventory items
       const formattedInventory: InventoryItem[] = inventoryTrades.map(trade => ({
         id: trade.id,
@@ -81,6 +86,7 @@ export function useTrades() {
 
       setTrades(completedTrades);
       setInventoryItems(formattedInventory);
+      console.log('Set inventory items to:', formattedInventory);
     } catch (error) {
       console.error('Error in fetchTrades:', error);
       toast({
