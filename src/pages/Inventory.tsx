@@ -1,11 +1,14 @@
 import { useState, useMemo } from 'react';
-import { InventoryItem } from '@/types/trade';
+import { InventoryItem, TradeCategory } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plus, Trash2, Package, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { RefreshCw, Plus, Trash2, Package, Clock, Search, Filter, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTrades } from '@/hooks/useTrades';
 import { cn } from '@/lib/utils';
@@ -18,6 +21,28 @@ export function Inventory() {
   const navigate = useNavigate();
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<TradeCategory | 'all'>('all');
+
+  const categories: TradeCategory[] = [
+    'Armors', 'Swords', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'
+  ];
+
+  // Filter inventory items
+  const filteredItems = useMemo(() => {
+    return inventoryItems.filter(item => {
+      const matchesSearch = item.itemName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [inventoryItems, searchTerm, selectedCategory]);
+
+  // Sort by date (newest first)
+  const sortedItems = useMemo(() => {
+    return [...filteredItems].sort((a, b) => 
+      new Date(b.datePurchased).getTime() - new Date(a.datePurchased).getTime()
+    );
+  }, [filteredItems]);
 
   const inventoryKPIs = useMemo(() => {
     const totalItems = inventoryItems.length;
@@ -78,14 +103,12 @@ export function Inventory() {
     });
   };
 
-  const handleDelete = async (itemId: string) => {
-    if (confirm('Are you sure you want to delete this item from inventory?')) {
-      await deleteTrade(itemId);
-      toast({
-        title: "Item removed",
-        description: "The item has been deleted from your inventory.",
-      });
-    }
+  const handleDelete = async (item: InventoryItem) => {
+    await deleteTrade(item.id);
+    toast({
+      title: "Item removed",
+      description: `${item.itemName} has been deleted from your inventory.`,
+    });
   };
 
   return (
@@ -180,6 +203,33 @@ export function Inventory() {
           <p className="text-sm text-muted-foreground">
             Items you own but haven't sold yet
           </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input
+                placeholder="Search items..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Select value={selectedCategory} onValueChange={(value) => setSelectedCategory(value as TradeCategory | 'all')}>
+                <SelectTrigger className="pl-10">
+                  <SelectValue placeholder="Filter by category" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border shadow-lg z-50">
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category} value={category}>
+                      {category}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {inventoryItems.length === 0 ? (
@@ -197,24 +247,33 @@ export function Inventory() {
                 Add Your First Item
               </Button>
             </div>
+          ) : sortedItems.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                No items found {searchTerm && `matching "${searchTerm}"`} {selectedCategory !== 'all' && `in ${selectedCategory} category`}
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Try adjusting your search terms or filters
+              </p>
+            </div>
           ) : (
-            <div className="rounded-md border">
+            <ScrollArea className="h-[600px]">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Item Name</TableHead>
+                    <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
+                    <TableHead>Lowest BIN</TableHead>
+                    <TableHead>Raw Craft Cost</TableHead>
+                    <TableHead>Price Paid</TableHead>
+                    <TableHead>Lowball %</TableHead>
                     <TableHead>Date Purchased</TableHead>
                     <TableHead>Days Held</TableHead>
-                    <TableHead>Price Paid</TableHead>
-                    <TableHead>Current Lowest BIN</TableHead>
-                    <TableHead>Potential Profit</TableHead>
-                    <TableHead>Actions</TableHead>
+                    <TableHead className="w-[50px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {inventoryItems.map((item) => {
-                    const potentialProfit = calculatePotentialProfit(item);
+                  {sortedItems.map((item) => {
                     const daysHeld = getDaysHeld(item.datePurchased);
                     return (
                       <TableRow key={item.id}>
@@ -222,17 +281,34 @@ export function Inventory() {
                           <button 
                             className="text-primary hover:underline"
                             onClick={() => {
-                              // TODO: Navigate to item analytics
-                              console.log('Navigate to item analytics:', item.itemName);
+                              window.location.href = `/item/${encodeURIComponent(item.itemName)}`;
                             }}
                           >
                             {item.itemName}
                           </button>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">{item.category}</Badge>
+                          <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
+                            {item.category}
+                          </span>
                         </TableCell>
                         <TableCell>
+                          {item.lowestBin > 0 ? formatNumber(item.lowestBin) : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {item.craftCost > 0 ? formatNumber(item.craftCost) : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {formatNumber(item.pricePaid)}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-medium ${
+                            item.lowballPercent > 0 ? 'text-green-500' : 'text-red-500'
+                          }`}>
+                            {item.lowballPercent}%
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
                           {item.datePurchased.toLocaleDateString()}
                         </TableCell>
                         <TableCell>
@@ -243,30 +319,41 @@ export function Inventory() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>{formatNumber(item.pricePaid)}</TableCell>
-                        <TableCell>{formatNumber(item.lowestBin)}</TableCell>
                         <TableCell>
-                          <span className={potentialProfit >= 0 ? 'text-success' : 'text-destructive'}>
-                            {potentialProfit >= 0 ? '+' : ''}{formatNumber(potentialProfit)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
+                          <div className="flex gap-1">
                             <Button
-                              variant="outline"
-                              size="sm"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => handleMarkAsSold(item)}
-                              className="text-success hover:bg-success/10"
+                              className="h-8 w-8 text-success hover:text-success-foreground hover:bg-success"
+                              title="Mark as Sold"
                             >
-                              Mark as Sold
+                              <Edit className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(item.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive-foreground hover:bg-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete Item</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to delete "{item.itemName}" from inventory? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    className="bg-destructive hover:bg-destructive/90"
+                                    onClick={() => handleDelete(item)}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -274,7 +361,7 @@ export function Inventory() {
                   })}
                 </TableBody>
               </Table>
-            </div>
+            </ScrollArea>
           )}
         </CardContent>
       </Card>
