@@ -60,7 +60,8 @@ export function Inventory() {
 
   const getDaysHeld = (datePurchased: Date) => {
     const now = new Date();
-    const diffTime = Math.abs(now.getTime() - datePurchased.getTime());
+    const purchaseDate = new Date(datePurchased);
+    const diffTime = Math.abs(now.getTime() - purchaseDate.getTime());
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
@@ -309,7 +310,7 @@ export function Inventory() {
                           </span>
                         </TableCell>
                         <TableCell className="text-muted-foreground">
-                          {item.datePurchased.toLocaleDateString()}
+                          {new Date(item.datePurchased).toLocaleDateString()}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
