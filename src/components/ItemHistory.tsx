@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Trade, TradeCategory } from '@/types/trade';
 import { formatNumber } from '@/utils/calculations';
 import {
@@ -15,7 +15,8 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Filter, Trash2, Edit } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Search, Filter, Trash2, Edit, Info, TrendingUp, TrendingDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { EditTradeDialog } from './EditTradeDialog';
 
@@ -88,7 +89,120 @@ export function ItemHistory({ trades, onDeleteTrade, onUpdateTrade }: ItemHistor
     return false;
   };
 
+  // Calculate summary statistics
+  const summaryStats = useMemo(() => {
+    const totalTrades = trades.length;
+    const totalProfit = trades.reduce((sum, trade) => sum + trade.netProfit, 0);
+    
+    const bestTradeByProfit = trades.length > 0 
+      ? trades.reduce((best, trade) => trade.netProfit > best.netProfit ? trade : best)
+      : null;
+    
+    const worstTradeByProfit = trades.length > 0
+      ? trades.reduce((worst, trade) => trade.netProfit < worst.netProfit ? trade : worst)
+      : null;
+    
+    const tradesWithPercentages = trades
+      .filter(t => t.pricePaid > 0)
+      .map(trade => ({
+        ...trade,
+        profitPercentage: (trade.netProfit / trade.pricePaid) * 100
+      }));
+    
+    const bestTradeByPercentage = tradesWithPercentages.length > 0
+      ? tradesWithPercentages.reduce((best, trade) => trade.profitPercentage > best.profitPercentage ? trade : best)
+      : null;
+    
+    const worstTradeByPercentage = tradesWithPercentages.length > 0
+      ? tradesWithPercentages.reduce((worst, trade) => trade.profitPercentage < worst.profitPercentage ? trade : worst)
+      : null;
+
+    return {
+      totalTrades,
+      totalProfit,
+      averageProfit: totalTrades > 0 ? totalProfit / totalTrades : 0,
+      bestTradeByProfit,
+      worstTradeByProfit,
+      bestTradeByPercentage,
+      worstTradeByPercentage,
+    };
+  }, [trades]);
+
   return (
+    <div className="space-y-6">
+      {/* Summary Statistics */}
+      {trades.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Trades
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-foreground">
+                {summaryStats.totalTrades}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Total Profit
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${summaryStats.totalProfit >= 0 ? 'text-success' : 'text-destructive'}`}>
+                {summaryStats.totalProfit >= 0 ? '+' : ''}{formatNumber(summaryStats.totalProfit)}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-success" />
+                Best Trade
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {summaryStats.bestTradeByProfit && (
+                <div className="space-y-1">
+                  <div className="text-lg font-bold text-success">
+                    +{formatNumber(summaryStats.bestTradeByProfit.netProfit)}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {summaryStats.bestTradeByProfit.itemName}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <TrendingDown className="w-4 h-4 text-destructive" />
+                Worst Trade
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {summaryStats.worstTradeByProfit && (
+                <div className="space-y-1">
+                  <div className="text-lg font-bold text-destructive">
+                    {formatNumber(summaryStats.worstTradeByProfit.netProfit)}
+                  </div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {summaryStats.worstTradeByProfit.itemName}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+      
     <Card>
       <CardHeader>
         <CardTitle>Item History</CardTitle>
@@ -147,11 +261,47 @@ export function ItemHistory({ trades, onDeleteTrade, onUpdateTrade }: ItemHistor
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Lowest BIN</TableHead>
-                  <TableHead>Raw Craft Cost</TableHead>
+                  <TableHead>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="flex items-center gap-1 cursor-help">
+                          Lowest BIN
+                          <Info className="w-3 h-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Buy It Now - The lowest listed price for this item on the Auction House</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
+                  <TableHead>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="flex items-center gap-1 cursor-help">
+                          Raw Craft Cost
+                          <Info className="w-3 h-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">The total cost of materials needed to craft this item</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead>Price Paid</TableHead>
                   <TableHead>Price Sold</TableHead>
-                  <TableHead>Lowball %</TableHead>
+                  <TableHead>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger className="flex items-center gap-1 cursor-help">
+                          Lowball %
+                          <Info className="w-3 h-3 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">Percentage below market value you paid - higher is better</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead className="w-[50px]">Actions</TableHead>
                 </TableRow>
@@ -250,5 +400,6 @@ export function ItemHistory({ trades, onDeleteTrade, onUpdateTrade }: ItemHistor
         onSave={handleUpdateTrade}
       />
     </Card>
+    </div>
   );
 }

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { PriceInput } from '@/components/ui/price-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Upload } from 'lucide-react';
+import { Plus, Trash2, Upload, FileUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BulkTradeRow {
@@ -129,6 +129,59 @@ export function BulkAddTrades({ onTradesAdded }: BulkAddTradesProps) {
 
   const categories: TradeCategory[] = ['Armors', 'Swords', 'Bows', 'Skins', 'Dyes', 'Miscellaneous', 'Accessories'];
 
+  const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        // Skip header row if present
+        const dataLines = lines[0].toLowerCase().includes('item') ? lines.slice(1) : lines;
+        
+        const newRows: BulkTradeRow[] = dataLines.map(line => {
+          const [itemName, category, lowestBin, craftCost, pricePaid, ahAverageValue, soldPrice, dateTime] = 
+            line.split(',').map(field => field.trim());
+          
+          return {
+            id: crypto.randomUUID(),
+            itemName: itemName || '',
+            category: (category as TradeCategory) || '',
+            lowestBin: lowestBin || '',
+            craftCost: craftCost || '',
+            pricePaid: pricePaid || '',
+            ahAverageValue: ahAverageValue || '',
+            lowballPercent: '',
+            soldPrice: soldPrice || '',
+            dateTime: dateTime || new Date().toISOString().slice(0, 16),
+            costBasis: 'lowestBin',
+            lowballBasis: 'lowestBin'
+          };
+        });
+        
+        setRows(prev => [...prev, ...newRows]);
+        
+        toast({
+          title: "CSV imported",
+          description: `Added ${newRows.length} rows from CSV file.`,
+        });
+      } catch (error) {
+        toast({
+          title: "Import failed",
+          description: "Failed to parse CSV file. Please check the format.",
+          variant: "destructive",
+        });
+      }
+    };
+    
+    reader.readAsText(file);
+    // Reset input
+    event.target.value = '';
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -144,10 +197,28 @@ export function BulkAddTrades({ onTradesAdded }: BulkAddTradesProps) {
         
         <CardContent className="space-y-4">
           <div className="flex justify-between items-center">
-            <Button onClick={addRow} variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Row
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={addRow} variant="outline">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Row
+              </Button>
+              
+              <label htmlFor="csv-upload">
+                <Button variant="outline" asChild>
+                  <span className="cursor-pointer">
+                    <FileUp className="w-4 h-4 mr-2" />
+                    Import CSV
+                  </span>
+                </Button>
+              </label>
+              <input
+                id="csv-upload"
+                type="file"
+                accept=".csv"
+                onChange={handleCSVUpload}
+                className="hidden"
+              />
+            </div>
             
             {rows.length > 0 && (
               <Button onClick={validateAndSubmit}>
