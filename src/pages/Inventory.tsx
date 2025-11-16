@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { RefreshCw, Plus, Trash2, Package, Clock, Search, Filter, Edit } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { RefreshCw, Plus, Trash2, Package, Clock, Search, Filter, Edit, Info, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useTrades } from '@/hooks/useTrades';
 import { cn } from '@/lib/utils';
@@ -264,10 +266,46 @@ export function Inventory() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Lowest BIN</TableHead>
-                    <TableHead>Raw Craft Cost</TableHead>
+                    <TableHead>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="flex items-center gap-1 cursor-help">
+                            Lowest BIN
+                            <Info className="w-3 h-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Buy It Now - The lowest listed price for this item on the Auction House</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableHead>
+                    <TableHead>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="flex items-center gap-1 cursor-help">
+                            Raw Craft Cost
+                            <Info className="w-3 h-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">The total cost of materials needed to craft this item</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableHead>
                     <TableHead>Price Paid</TableHead>
-                    <TableHead>Lowball %</TableHead>
+                    <TableHead>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger className="flex items-center gap-1 cursor-help">
+                            Lowball %
+                            <Info className="w-3 h-3 text-muted-foreground" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">Percentage below market value you paid - higher is better</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableHead>
                     <TableHead>Date Purchased</TableHead>
                     <TableHead>Days Held</TableHead>
                     <TableHead className="w-[50px]">Actions</TableHead>
@@ -279,14 +317,31 @@ export function Inventory() {
                     return (
                       <TableRow key={item.id}>
                         <TableCell className="font-medium">
-                          <button 
-                            className="text-primary hover:underline"
-                            onClick={() => {
-                              window.location.href = `/item/${encodeURIComponent(item.itemName)}`;
-                            }}
-                          >
-                            {item.itemName}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button 
+                              className="text-primary hover:underline"
+                              onClick={() => {
+                                window.location.href = `/item/${encodeURIComponent(item.itemName)}`;
+                              }}
+                            >
+                              {item.itemName}
+                            </button>
+                            {daysHeld > 3 && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Badge variant="destructive" className="gap-1">
+                                      <AlertTriangle className="w-3 h-3" />
+                                      {daysHeld}d
+                                    </Badge>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Item held for {daysHeld} days. Consider selling to free up capital!</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary">
